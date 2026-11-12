@@ -37,6 +37,12 @@ ACK 确认，BYE 拆除**。这是全部 SIP 知识的汇合点，其他概念�
 
 最后这段是理解 [[concepts/dialog]]（待建）与 forking 的关键：**一通呼叫可以有多个对话**。
 
+## 时序图
+
+![一次基本 SIP 呼叫的时序](assets/ladder-basic-call.svg)
+
+图源：`wiki/assets/ladder-basic-call.svg`，手写 SVG，构建时内联进页面（简化自 §24.2 Figure 1）。
+
 ## 消息序列（F1–F14）
 
 原文示例见 §24.2 的 Figure 1（"SIP session setup example with SIP trapezoid"，见 §4），

@@ -22,6 +22,7 @@ npm run check     # 只校验不写文件
 | `vocab/*.yaml` | `dist/vocab.html` | 生词本（音标 + 发音 + 筛选 + 抽卡） |
 | `sip/raw/rfc/rfc3261.txt` | `dist/raw/rfc3261.html` | **原文锁点页**：按节切分、剔页眉页脚，`§x.y` 可直跳 |
 | `sip/labs/drills/*.md` | `dist/drills/<slug>.html` | 练习页（带证据锚点与相关 wiki） |
+| `wiki/assets/*.svg` | 内联进对应页面 | 说明图（md 里写 `![说明](assets/x.svg)`，构建时把文件内容嵌进页面） |
 | 以上全部正文 | `dist/search.json` | 全站子串搜索（几百页足够，不上向量） |
 
 ## 三类 chip 的行为
@@ -88,3 +89,6 @@ updated: 2026-11-12
 | `§x.y` 点了 404 / 跳不到 | 章节号不在原文抽出的集合里（`H`）——先用 `grep -n "^x.y" sip/raw/rfc/rfc3261.txt` 确认写法 |
 | 原文页缺某节 | 标题行以数字开头但首段>30（被当作正文）；或标题以非字母数字字符开头 |
 | chip 变成虚线灰块 | 对应的 raw 原文或 drill 文件不存在——这是设计如此，不是 bug |
+| 图没显示出来 | md 里的路径相对 `wiki/`（`assets/x.svg`），文件实际在 `wiki/assets/` |
+| 页面样式被图里串改 | SVG 内的类名没加 `dg-` 前缀（内联后 `<style>` 是全局作用域）；构建会 warn |
+| 图排版变形/文字重叠 | 跑 `node .agents/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图看 |

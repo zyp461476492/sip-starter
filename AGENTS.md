@@ -65,6 +65,8 @@
    - 新踩的坑落 `docs/memory/facts.md`（症状 → 结论 → 证据）
 9. **计划是假设，不是承诺**：任何 task 开工时若发现前提不成立（缺前置知识 / 判据写错 / 顺序错了），
    **当场改 `plan.yaml` 并记 `open-threads.md`**，不许硬做完再补。改计划不是失败，掩盖假设才是。
+10. **`code: false` 的阶段不得产出实现代码**（验证脚本、手工拼报文除外）。
+    标记见 `plan/plan.yaml` 的阶段字段，站点会显示“不写代码”。
 
 ---
 
@@ -105,3 +107,14 @@
 ## 6. 提交
 
 一个里程碑一个 commit，message 用 `M<n>: <做了什么>`。`site/dist/` 与 `node_modules/` 不入库。
+
+---
+
+## 7. 图表
+
+说明图统一用 `.agents/skills/svg-diagram` 技能（手写内联 SVG，不用截图/ASCII）。
+
+1. SVG 源文件放 `wiki/assets/<slug>.svg`（素材，不入 dist）
+2. md 里写 `![图说明](assets/<slug>.svg)`，构建时会把文件内容内联进页面
+3. **类名必须带 `dg-` 前缀**（`.dg-th` / `.dg-arr` / `.dg-lane`），否则内联时会污染页面样式
+4. 交付前必须跑 `node .agents/skills/svg-diagram/scripts/svg-check.mjs <svg>`，并用 `render.mjs` 截图肉眼确认

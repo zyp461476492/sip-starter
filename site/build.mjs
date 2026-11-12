@@ -131,7 +131,19 @@ function renderMd(md, { pages, rel }) {
     if (page) return `<a class="wl" href="${rel}wiki/${slug}.html">${label}</a>`;
     return `<a class="redlink" title="待建页面 ${esc(slug)}">${label}</a>`;
   });
-  return marked.parse(linked, { async: false, mangle: false, headerIds: false });
+  let html = marked.parse(linked, { async: false, mangle: false, headerIds: false });
+  // 内联 SVG：md 里写 ![说明](assets/x.svg)，构建时把文件内容直接嵌进页面（单文件、无路径问题）
+  html = html.replace(/<img\b[^>]*src="([^"]+\.svg)"[^>]*>/gi, (all, src) => {
+    const p = join(WIKI, src.replace(/^\.\//, ''));
+    if (!existsSync(p)) {
+      errors.push(`页面引用的 SVG 不存在：wiki/${src}`);
+      return all;
+    }
+    const svg = readFileSync(p, 'utf8');
+    if (!/class="dg-/.test(svg)) warn.push(`SVG 未用 dg- 类前缀（内联时会污染页面样式）：${src}`);
+    return svg;
+  });
+  return html;
 }
 
 /* ── 页面骨架 ───────────────────────────────────────────── */
@@ -181,6 +193,10 @@ function renderPlan(plan, pages, rel) {
     .map((phase) => {
       const pt = phase.tasks || [];
       const pd = pt.filter((t) => t.status === 'done').length;
+      const marks = [
+        phase.code === false ? '<span class="badge noco">不写代码</span>' : '<span class="badge code">要写代码</span>',
+        phase.timebox ? `<span class="badge">约 ${esc(phase.timebox)}</span>` : '',
+      ].join(' ');
       const rows = pt
         .map(
           (t) => `<article class="task ${t.status}">
@@ -191,6 +207,7 @@ function renderPlan(plan, pages, rel) {
   <p class="why">为什么：${esc(t.why)}</p>
   <p class="done-when"><b>完成判据</b>：${esc(t.done_when)}</p>
   <div class="chips">
+    ${t.est ? `<span class="chip">约 ${esc(t.est)}</span>` : ''}
     ${(t.sources || []).map((s) => sourceChip(s, rel)).join('')}
     ${(t.wiki || []).map(wikiChip).join('')}
     ${(t.drills || []).map((d) => drillChip(d, rel)).join('')}
@@ -201,6 +218,7 @@ function renderPlan(plan, pages, rel) {
         .join('');
       return `<section class="phase">
   <h3>${esc(phase.title)} <small>${pd}/${pt.length}</small></h3>
+  <p class="phaseMarks">${marks}</p>
   <p class="goal">目标：${esc(phase.goal)}</p>
   ${rows}
 </section>`;

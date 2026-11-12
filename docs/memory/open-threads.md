@@ -11,14 +11,11 @@
 
 ## 待办（M2）
 
-- [ ] **Phase 0 认知地基**（p0-1 … p0-5，下一个开工项）——**先于 α-1**
-  - p0-1 通读 §1–§3+§5（这几节**未核对正文**，初版地图靠标题把它们归为“跳”，已改正）
-  - 产出：`wiki/concepts/sip-mental-model.md`（现在 `status: draft`，一条答案也没有）
-  - 判据：五个“为什么”能带锁点作答（`sip/labs/drills/mental-model.md`）
-- [ ] **α-1 消息 round-trip**（Phase 0 之后，drill 已写好：`msg-parse.md`）
-  - 卡点：实现语言未定 —— 建议先在本仓 `labs/` 用目标语言写验证件，将来直接搬迁
-- [ ] α-4 验收工具链：本机是否装了 `sipsak` / `sipexer` / `sipp` / `tshark`
-  - 触发：做 α-4 前一天确认，缺则先装（也可写 docker 命令代替）
+- [ ] **L0-1**（下一个开工项）读 §4 + §24.1/§24.2，1h 内不写代码
+- [ ] **L1-0 工具链**：本机是否已有 `sipsak` / `sipp` / `tshark`
+  - 触发：进入 L1 前一天确认；缺的写 docker 命令，不要卡在装环境
+- [ ] **L1-1 抓包**：需要两台软电话或 `sipp` uas + `pjsua`
+  - 触发：L1-0 完成时
 - [ ] `vocab/candidates.yaml` 晋升流程（含晋升脚本或手工口令）
 - [ ] `wiki/questions/` 首批真问题 + file-back 样板
 

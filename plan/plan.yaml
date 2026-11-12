@@ -1,76 +1,197 @@
 # 学习计划：站点唯一数据源。字段说明见同目录 README.md。
 # 纪律：`wiki:` / `drills:` 里只写能解析的 slug，站点据此判定"已支撑/未支撑"。
 #
-# 阶段按"自研 SIP 栈的可运行里程碑"组织（α 报文 → β 事务 → γ 对话/注册 → δ B2BUA → ε 互通），
-# 不按 RFC 章节组织。章节到里程碑的映射见 wiki/specs/rfc3261.md。
-# 目标：亲手实现一个 FreeSWITCH-like 组件的信令内核；本仓只放 labs 验证件（ADR-0004）。
+# 阶段顺序：L0 骨架 → L1 观察 → L2 原理 → L3 模仿 → α 报文 → β 事务 → γ 对话/注册 → δ B2BUA → ε 互通
+# 原则：**现象 → 原理 → 模仿 → 实现**。前四段不写实现代码（code: false）。
+# 章节到阶段的映射见 wiki/specs/rfc3261.md；方法见 docs/03-learning-method.md。
 
 active_topic: sip
 updated: 2026-11-12
 
 phases:
-  - id: p0
-    title: Phase 0 · 认知地基（开工前置，不产代码）
-    goal: 知道 SIP 为什么长这样（边界与取舍），而不是只有“照 ABNF 抄代码”的能力
+  - id: l0
+    title: L0 骨架 · 先看清长什么样
+    goal: 不写代码，先能把梯形拓扑画出来、把两个报文实例逐头讲清
+    code: false
+    timebox: 1–1.5h
     tasks:
-      - id: p0-1
-        title: 通读 §1–§3 + §5（定位、边界、术语、分层）
-        why: 这几节信息密度低但**边界价值高**；不读会把“为什么这么设计”当成怪癖
+      - id: l0-1
+        title: 读 §4 Overview + §24.1/§24.2，看清梯形拓扑
+        why: 全篇最有效的十页；后面每个阶段都在它的某一段里
         prereq: []
-        sources: ["RFC3261 §1", "RFC3261 §2", "RFC3261 §3", "RFC3261 §5"]
-        wiki: ["specs/rfc3261", "concepts/sip-mental-model"]
-        drills: ["mental-model"]
-        done_when: 能用一句话说出“SIP 做什么、明确不做什么”，并说出 §5 的分层里事务与对话谁在下
+        sources: ["RFC3261 §4", "RFC3261 §24.1", "RFC3261 §24.2"]
+        wiki: ["flows/basic-call"]
+        drills: []
+        est: 40min
+        done_when: 不看图画梯形拓扑，并说出 UAC/UAS/代理/registrar 各自维护什么状态
         status: todo
-      - id: p0-2
-        title: 精读 §6 Definitions（Transaction / Dialog / Call 的边界）
-        why: 后面所有“这个状态该放哪层”的判断，都以这三个定为前提
-        prereq: [p0-1]
+      - id: l0-2
+        title: 把 F1 REGISTER / F2 200 OK 逐头标注
+        why: 后面所有测试都用这两个报文当基线，先把每个头"为什么存在"弄清
+        prereq: [l0-1]
+        sources: ["RFC3261 §24.1", "RFC3261 §7.3", "RFC3261 §20.42"]
+        wiki: ["messages/headers/via", "flows/basic-call"]
+        drills: []
+        est: 30min
+        done_when: F1 每个头域都能说"为什么必须存在"；F2 相对 F1 新增/变化了哪些（To.tag、received）能逐条指出
+        status: todo
+
+  - id: l1
+    title: L1 观察 · 用工具看真实流量
+    goal: 用现成工具造出真实报文与抓包，建立"这东西动起来什么感觉"
+    code: false
+    timebox: 3–5h
+    tasks:
+      - id: l1-0
+        title: 工具链就绪（sipsak / sipp / tshark / 一台软电话）
+        why: 后面每一步都靠它们给反馈；先确认能跑，别在实验中途折腾环境
+        prereq: [l0-1]
+        sources: []
+        wiki: []
+        drills: []
+        est: 40min
+        done_when: 每个工具各跑出一次结果，版本与命令记进 sip/labs/README.md；缺的用 docker 方案补上
+        status: todo
+      - id: l1-1
+        title: 抓一通真实呼叫（两台软电话或 sipp uas + pjsua）
+        why: 只有见过真实报文，才知道 RFC 例子是被整理过的
+        prereq: [l1-0]
+        sources: ["RFC3261 §24.2"]
+        wiki: ["flows/basic-call"]
+        drills: []
+        est: 1h
+        done_when: pcap 存到 sip/labs/captures/，能在包里指出 INVITE/100/180/200/ACK/BYE 与各自方向
+        status: todo
+      - id: l1-2
+        title: 真实报文 vs §24.2 例子，逐条对照差异
+        why: 真实设备比规范写得多这件事必须亲眼看一次，否则会把例子当标准
+        prereq: [l1-1]
+        sources: ["RFC3261 §24.2"]
+        wiki: ["flows/basic-call"]
+        drills: []
+        est: 40min
+        done_when: 列出 ≥5 处差异（多/少/顺序不同），每条能给出原因或明确标"未解"进 questions
+        status: todo
+      - id: l1-3
+        title: 观察重传：故意不回响应，量间隔
+        why: 这是 β 的预习——事务层的核心机制，先看见再实现
+        prereq: [l1-0]
+        sources: ["RFC3261 §17.1.1.1", "RFC3261 附录 A Table 4"]
+        wiki: ["concepts/transaction"]
+        drills: ["transaction-timers"]
+        est: 1h
+        done_when: 测出重传间隔序列，与 Table 4 的 T1/T2 吻合（500ms→1s→2s→…封顶 4s）
+        status: todo
+      - id: l1-4
+        title: 观察鉴权挑战：让 REGISTER 收到 401
+        why: 401/407 是真实设备的第一道门，也是 γ 的预习
+        prereq: [l1-1]
+        sources: ["RFC3261 §22.1", "RFC3261 §21.4"]
+        wiki: []
+        drills: []
+        est: 1h
+        done_when: 指出 Authorization 出现在第二次请求的哪里、CSeq 如何递增、两次 REGISTER 哪些头必须相同
+        status: todo
+      - id: l1-5
+        title: 观察事务与对话的边界：CANCEL 一通未应答的 INVITE
+        why: 事务/对话的边界是这个协议最容易混的地方，看见一次胜过读十遍
+        prereq: [l1-3]
+        sources: ["RFC3261 §9"]
+        wiki: ["concepts/transaction"]
+        drills: []
+        est: 45min
+        done_when: 指出 CANCEL 的 branch 与 INVITE 相同，且收到 200(CANCEL) 与 487(INVITE) 两条响应
+        status: todo
+
+  - id: l2
+    title: L2 原理 · 带着现象回读
+    goal: 把 L1 看到的现象映射到规范的分层与定义上，答完五个"为什么"
+    code: false
+    timebox: 2–3h
+    tasks:
+      - id: l2-1
+        title: 带现象回读 §1–§3 + §5
+        why: 有了现象再读"定位/边界/分层"，理解率高得多；这几节卖的是取舍，不是知识点
+        prereq: [l1-5]
+        sources: ["RFC3261 §1", "RFC3261 §2", "RFC3261 §3", "RFC3261 §5"]
+        wiki: ["concepts/sip-mental-model"]
+        drills: ["mental-model"]
+        est: 1h
+        done_when: 能用一句话说出"SIP 做什么、明确不做什么"，并说出 §5 的分层里事务与对话谁在下
+        status: todo
+      - id: l2-2
+        title: 精读 §6 Definitions（Transaction / Dialog / Call）
+        why: 后面所有"这个状态该放哪层"的判断，都以这三个定义为前提
+        prereq: [l2-1]
         sources: ["RFC3261 §6"]
         wiki: ["concepts/transaction", "concepts/sip-mental-model"]
         drills: ["mental-model"]
+        est: 45min
         done_when: 三条定义都能逐字引用，并说出各自作用域（一个请求-响应 / 一端到另一端 / 整通呼叫）
         status: todo
-      - id: p0-3
-        title: 精读 §4 Overview of Operation（梯形拓扑）
-        why: 全篇最有效的十页；后面每个里程碑都在它的某一段里
-        prereq: [p0-1]
-        sources: ["RFC3261 §4"]
-        wiki: ["flows/basic-call", "concepts/sip-mental-model"]
-        drills: []
-        done_when: 不看图画梯形拓扑，并说出 UAC/UAS/代理/registrar 各自维护什么状态
-        status: todo
-      - id: p0-4
-        title: 通读 §24.1/§24.2 报文例子（兼做 α-1 夹具）
-        why: 报文实例是后面所有测试的基线，先把眼熟
-        prereq: [p0-3]
-        sources: ["RFC3261 §24.1", "RFC3261 §24.2"]
-        wiki: ["flows/basic-call"]
-        drills: ["msg-parse"]
-        done_when: 能指出 F1 里每个头域“为什么必须存在”，并认出 F2 相对 F1 新增/变化了哪些
-        status: todo
-      - id: p0-5
-        title: 产出 sip-mental-model 页 + 5 题自测
-        why: 不落成的“看过”等于没看；这页也是以后判断“该不该在 SIP 层做”的依据
-        prereq: [p0-2, p0-3, p0-4]
-        sources: ["RFC3261 §4", "RFC3261 §6"]
+      - id: l2-3
+        title: 填完 sip-mental-model 的五个"为什么"
+        why: 不落成的"看过"等于没看；这页以后是判断"该不该在 SIP 层做"的依据
+        prereq: [l2-2]
+        sources: ["RFC3261 §4", "RFC3261 §6", "RFC3261 §17"]
         wiki: ["concepts/sip-mental-model"]
         drills: ["mental-model"]
-        done_when: 五个“为什么”全部能带锁点作答（不许抄摘要），且该页 status 升 current
+        est: 1h
+        done_when: 五题全部能带锚点作答（不许抄摘要），该页 status 升 current
+        status: todo
+
+  - id: l3
+    title: L3 模仿 · 手工改报文做对照实验
+    goal: 用最小的代码量（拼字符串）获得真实设备的反馈，为 parser 建立直觉
+    code: true
+    timebox: 2–4h
+    tasks:
+      - id: l3-1
+        title: 手拼一条 OPTIONS 发给真实对端
+        why: 第一次让"自己造的东西"被真实设备接受，这是最好的正反馈
+        prereq: [l2-3]
+        sources: ["RFC3261 §11.1", "RFC3261 §7"]
+        wiki: ["flows/basic-call"]
+        drills: ["msg-parse"]
+        est: 1h
+        done_when: 用脚本或 netcat 拼出报文，对端回 200，且 tshark 解析无 malformed
+        status: todo
+      - id: l3-2
+        title: 四个对照实验（删 Content-Length / 改 branch 前缀 / 重复 CSeq / 加折行）
+        why: 每个实验对应一条边缘条款，比读一遍记得牢
+        prereq: [l3-1]
+        sources: ["RFC3261 §7.5", "RFC3261 §8.1.1.7", "RFC3261 §8.1.1.5", "RFC3261 §7.3.1"]
+        wiki: ["messages/headers/via"]
+        drills: []
+        est: 1.5h
+        done_when: 四个实验各记"改了什么 → 观察到什么 → 对应哪条 RFC"，未解的进 wiki/questions
+        status: todo
+      - id: l3-3
+        title: 让软电话接受你拼的 OPTIONS
+        why: 从"对端能收"到"真实产品能收"，中间差的是各种宽容度
+        prereq: [l3-1]
+        sources: ["RFC3261 §11.1"]
+        wiki: []
+        drills: []
+        est: 45min
+        done_when: 软电话回 200，且 tshark 无 malformed、无 "bad header"
         status: todo
 
   - id: alpha
     title: α 报文层 · 解析、序列化、UDP/TCP 收发
-    goal: 能收发并正确切分真实软电话的报文，对 OPTIONS 给出合法应答
+    goal: 写 parser 与收发层，对 OPTIONS 给出合法应答
+    code: true
+    timebox: 1–2 周
     tasks:
       - id: alpha-1
-        title: 消息与头域的解析/序列化（round-trip）
-        why: 后面每层都以此为前提；先把它做到"读进来再写出去字节级一致"
-        prereq: []
+        title: 消息与头域的解析/序列化
+        why: 后面每层都以此为前提；先做到"读进来能打印清楚"，再做到"写出去字节一致"
+        prereq: [l3-3]
         sources: ["RFC3261 §7.1", "RFC3261 §7.2", "RFC3261 §7.3"]
         wiki: ["specs/rfc3261", "messages/headers/via"]
         drills: ["msg-parse"]
-        done_when: 解析 §24.1 的 F1 REGISTER 与 F2 200 OK，字段级 round-trip 与原文字节一致（除页眉页脚）
+        est: 4h
+        done_when: 基线=把 §24.1 的 F1/F2 解析成字段并打印（折行合并、compact form 识别正确）；加强=round-trip 字节级一致
         status: todo
       - id: alpha-2
         title: SIP URI 解析与比较
@@ -79,6 +200,7 @@ phases:
         sources: ["RFC3261 §19.1", "RFC3261 §19.1.4"]
         wiki: ["specs/rfc3261"]
         drills: []
+        est: 3h
         done_when: 覆盖 userinfo/端口/参数/headers/转义的用例全过，且能实现 §19.1.4 的等价判定
         status: todo
       - id: alpha-3
@@ -88,62 +210,72 @@ phases:
         sources: ["RFC3261 §7.5", "RFC3261 §18", "RFC3261 §18.3"]
         wiki: ["specs/rfc3261"]
         drills: []
-        done_when: 同一份报文流在 UDP/TCP 两种模式下都能正确切分；TCP 上出现粘包/半包不误判
+        est: 3h
+        done_when: 同一报文流在 UDP/TCP 两种模式下都能正确切分；TCP 上粘包/半包不误判
         status: todo
       - id: alpha-4
         title: 最小 UAS —— 正确应答 OPTIONS
-        why: 第一个能被第三方工具验收的产物，先把"合法的响应"这件事做对
+        why: 第一个能被第三方工具验收的产物
         prereq: [alpha-1, alpha-3]
         sources: ["RFC3261 §11.2", "RFC3261 §8.2.6"]
         wiki: ["specs/rfc3261"]
         drills: ["options-uas"]
+        est: 3h
         done_when: sipsak/sipexer 打 OPTIONS 收到 200，且 To.tag、Via 回显、Content-Length 全部正确
         status: todo
 
   - id: beta
     title: β 事务层 · 四套状态机与定时器
-    goal: 四个状态机逐条实现，能在丢包/重包/超时下与标准行为一致
+    goal: 四个状态机逐条实现，丢包/重包/超时下与标准行为一致
+    code: true
+    timebox: 2–3 周
     tasks:
       - id: beta-1
         title: NICT/NIST（非 INVITE 事务）+ Timer E/F/K/J
-        why: 结构最简单的一对，先把定时器轮和"重传来驱动响应重传"的机制跑顺
+        why: 结构最简单的一对，先把定时器轮和"重传来驱动响应重传"跑顺（L1 已肉眼见过）
         prereq: [alpha-4]
         sources: ["RFC3261 §17.1.2", "RFC3261 §17.2.2", "RFC3261 附录 A Table 4"]
-        wiki: ["concepts/transaction", "specs/rfc3261"]
+        wiki: ["concepts/transaction"]
         drills: ["transaction-timers"]
+        est: 8h
         done_when: 同一请求重传 3 次只产生 1 个响应；收到 1xx 后请求仍以 T2 间隔继续重传
         status: todo
       - id: beta-2
         title: ICT/IST（INVITE 事务）+ ACK 的两套规则
-        why: SIP 里最容易写错的地方；2xx 之后的 ACK 不属于事务这条必须落到代码结构上
+        why: SIP 里最容易写错的地方；2xx 后的 ACK 不属于事务这条必须落到代码结构上
         prereq: [beta-1]
         sources: ["RFC3261 §17.1.1", "RFC3261 §17.1.1.3", "RFC3261 §17.2.1"]
         wiki: ["concepts/transaction", "flows/basic-call"]
         drills: []
-        done_when: 非 2xx 的 ACK 命中同一事务且不再重传响应；2xx 后的 ACK 走独立路径，重传由 UAS 负责
+        est: 8h
+        done_when: 非 2xx 的 ACK 命中同一事务且不再重传响应；2xx 后 ACK 走独立路径，重传由 UAS 负责
         status: todo
       - id: beta-3
-        title: 事务匹配规则（响应↔客户端事务、请求↔服务端事务）
+        title: 事务匹配规则（响应↔客户端、请求↔服务端）
         why: 匹配写错会出现"响应被别的事务吃掉"和幽灵重传，抓包看不出来
         prereq: [beta-2]
         sources: ["RFC3261 §17.1.3", "RFC3261 §17.2.3", "RFC3261 §8.1.1.7"]
         wiki: ["messages/headers/via", "concepts/transaction"]
         drills: []
-        done_when: 两个 branch 不同的 INVITE 不互相吞响应；CANCEL/ACK 复用 branch 时能被正确归并
+        est: 4h
+        done_when: 两个 branch 不同的 INVITE 不互吞响应；CANCEL/ACK 复用 branch 时能被正确归并
         status: todo
       - id: beta-4
         title: 可注入时钟 + 64*T1 超时路径
-        why: 真实定时器不可测；把时间做成依赖注入，才能在 1 秒内验证 32 秒的行为
+        why: 真实定时器不可测；时间做成依赖注入，才能在 1 秒内验证 32 秒的行为
         prereq: [beta-1]
         sources: ["RFC3261 §17", "RFC3261 附录 A Table 4"]
         wiki: ["concepts/transaction"]
         drills: ["transaction-timers"]
+        est: 3h
         done_when: 假时钟下一个 INVITE 事务完整走完 Timer B 超时路径，状态迁移与 §17 图一致
         status: todo
 
   - id: gamma
     title: γ 对话与注册 · registrar + Digest + dialog
     goal: 真实软电话能注册成功，对话内请求能正确匹配与路由
+    code: true
+    timebox: 2–3 周
     tasks:
       - id: gamma-1
         title: Registrar：绑定存储、过期、注销、查询
@@ -152,30 +284,35 @@ phases:
         sources: ["RFC3261 §10.2", "RFC3261 §10.3", "RFC3261 §19.1.4"]
         wiki: ["specs/rfc3261"]
         drills: []
+        est: 6h
         done_when: 注册/刷新/查询/注销（Expires:0）四种操作与 Contact 比较都符合 §10.3
         status: todo
       - id: gamma-2
         title: Digest 鉴权（401 与 407 两套流程）
-        why: 任何真实设备默认要求鉴权；401（UAS）与 407（代理）的差别是常见混淆点
+        why: 任何真实设备默认要求鉴权；L1 已肉眼见过 401 四步
         prereq: [gamma-1]
         sources: ["RFC3261 §22.1", "RFC3261 §22.2", "RFC3261 §22.3", "RFC3261 §22.4"]
         wiki: ["specs/rfc3261"]
         drills: []
+        est: 6h
         done_when: Linphone 用正确口令注册成功；错误口令收到 403；401/407 不混用
         status: todo
       - id: gamma-3
         title: Dialog 状态、tag 规则、对话内路由
-        why: 对话是 BYE/re-INVITE 的容器，也是排障时"消息到底该发给谁"的判据
+        why: 对话是 BYE/re-INVITE 的容器，也是"消息该发给谁"的判据
         prereq: [gamma-2]
         sources: ["RFC3261 §12", "RFC3261 §19.3", "RFC3261 §16.6"]
         wiki: ["specs/rfc3261"]
         drills: []
+        est: 8h
         done_when: BYE 只在正确对话内匹配成功；Route 集按 Record-Route 逆序使用；错 tag 的 BYE 被正确拒绝
         status: todo
 
   - id: delta
     title: δ B2BUA · 双 leg 呼叫打通
     goal: alice → 服务器 → bob 双向音频通，异常分支不残留状态
+    code: true
+    timebox: 3–4 周
     tasks:
       - id: delta-1
         title: 双 leg 呼叫建立与 SDP 透传
@@ -184,47 +321,54 @@ phases:
         sources: ["RFC3261 §13", "RFC3261 §8.1", "RFC3261 §8.2"]
         wiki: ["flows/basic-call"]
         drills: []
+        est: 12h
         done_when: 两台真实软电话经本机转接通话，双向音频可达（先 RTP relay，不做转码）
         status: todo
       - id: delta-2
         title: 取消与失败分支（CANCEL/487、忙、拒接、超时）
-        why: 真实世界的呼叫多数不成功；异常路径不干净会留下僵尸 leg 和占用的端口
+        why: 真实世界的呼叫多数不成功；异常路径不干净会留下僵尸 leg
         prereq: [delta-1]
         sources: ["RFC3261 §9", "RFC3261 §15", "RFC3261 §21.4"]
         wiki: ["flows/basic-call", "concepts/transaction"]
         drills: []
+        est: 8h
         done_when: 忙/拒接/无应答/主叫取消四种情况下，两侧 leg 与对话都被正确释放
         status: todo
       - id: delta-3
         title: 会话修改与被叫挂断（re-INVITE、hold、BYE）
-        why: hold 与 re-INVITE 是最常见的"通着通着就哑了"的来源，也是 glare 的现场
+        why: hold 与 re-INVITE 是"通着通着就哑了"的常见来源，也是 glare 的现场
         prereq: [delta-2]
         sources: ["RFC3261 §14", "RFC3261 §15", "RFC3261 §21.4.27"]
         wiki: ["specs/rfc3261"]
         drills: []
+        est: 10h
         done_when: hold/resume 双向正确；同时 re-INVITE 时按 §14.2 处理 glare，不产生双活会话
         status: todo
 
   - id: epsilon
     title: ε 互通与排障 · 与真设备同台
     goal: 不是"我的实现能跑"，而是"别人的设备愿意跟我跑"
+    code: true
+    timebox: 2–3 周
     tasks:
       - id: epsilon-1
         title: 与 Linphone / MicroSIP / 一台真 FreeSWITCH 互通
-        why: 互通暴露的全是自己在实验室里想不到的边缘行为
+        why: 互通暴露的全是实验室里想不到的边缘行为
         prereq: [delta-3]
         sources: ["RFC3261 §18", "RFC3261 §24"]
         wiki: ["flows/basic-call"]
         drills: []
+        est: 12h
         done_when: 与三个对端各打通 3 次（含挂断与互拨），Wireshark 全链路无异常重传
         status: todo
       - id: epsilon-2
         title: NAT 与保活（rport、outbound）
-        why: 终端在 NAT 后是常态；不做这层，只能同网段自娱自乐
+        why: 终端在 NAT 后是常态；不做这层只能同网段自娱自乐
         prereq: [epsilon-1]
         sources: ["RFC3581（待入库）", "RFC5626（待入库）"]
         wiki: ["messages/headers/via"]
         drills: []
+        est: 12h
         done_when: NAT 后的终端能注册并被呼通；连接失效后能按保活机制恢复
         status: todo
       - id: epsilon-3
@@ -234,5 +378,6 @@ phases:
         sources: ["RFC4028（待入库）"]
         wiki: []
         drills: []
+        est: 8h
         done_when: 会话刷新按协商的 Session-Expires 工作，超时按 §4028 拆除
         status: todo
