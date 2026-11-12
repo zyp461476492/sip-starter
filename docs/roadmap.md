@@ -27,12 +27,13 @@
 
 | 产出 | 验收 |
 |---|---|
-| `wiki/specs/rfc3261.md` 章节地图（读/查/跳 + 服务里程碑） | 每节都有归属，且能指出"这节现在不读" |
+| `wiki/specs/rfc3261.md` 章节地图（读法四档 + 服务哪个阶段） | 每节都有归属，且能指出"这节现在不读" |
 | `plan/plan.yaml` 重排为 **L0 骨架 → L1 观察 → L2 原理 → L3 模仿 → α–ε 实现**，共 31 个任务 | 前三段 `code: false`；每段有时间盒 |
 | L0–L3 合计约 7–12h，期间不写实现代码 | 心智模型页升 `current`；手拼报文被真实对端接受 |
-| `sip/labs/drills/` 首批 3 个 drill | 判据可执行，无"理解了"这类词 |
+| `sip/labs/drills/` 首批 4 个 drill | 判据可执行，无"理解了"这类词 |
 | `docs/01-workflow.md` 写明"读 spec 的时机" | 新会话不会再去通读 RFC |
-| α-1（消息 round-trip）跑通 | 字节级一致 |
+| **图表能力**：`svg-diagram` 技能（源码 `tools/skills/`，装到全局）+ `wiki/assets/ladder-basic-call.svg` | `svg-check` 0 错误；图已内联进 `flows/basic-call` |
+| α-1（消息 round-trip）跑通 | 基线=解析并打印；加强=字节级一致 |
 
 **验收**：能连续两周按站点计划推进，且每个 task 完成时都留下一个可跑的 drill。
 

@@ -9,7 +9,7 @@ last_updated: 2026-11-12
 
 - M1 最小闭环 ✅：目录、`AGENTS.md`、`docs/` 全套、rfc3261 入库、wiki 三页样板、
   vocab 5 条（含音标与三层发音回退）、站点三视图、`npm run check` 锚点校验
-- M2 ✅（结构部分）：`wiki/specs/rfc3261.md` 章节地图（28 节 → 读/查/跳 + 服务哪个里程碑）、
+- M2 ✅（结构部分）：`wiki/specs/rfc3261.md` 章节地图（28 节 → 读法四档：精读/通读/查阅/跳 + 服务哪个阶段）、
   `plan.yaml` 改为 **L0 骨架 → L1 观察 → L2 原理 → L3 模仿 → α–ε 实现**（31 任务），
   前三段标 `code: false`（不写代码），每段带时间盒
 - M2 ✅（文档落地）：ADR-0005（学习方案的备选与否决）+ `docs/03-learning-method.md`（四分类法、

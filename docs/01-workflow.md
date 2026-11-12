@@ -47,8 +47,8 @@
 ## 遗留清单（M2 / M3 要补的东西）
 
 - [x] M2：`plan.yaml` 改成按里程碑（α 报文 / β 事务 / γ 对话与注册 / δ B2BUA / ε 互通）组织
-- [x] M2：`wiki/specs/rfc3261.md` 章节地图（读/查/跳 + 服务哪个里程碑）
-- [x] M2：首批三个 drill（msg-parse / options-uas / transaction-timers）
+- [x] M2：`wiki/specs/rfc3261.md` 章节地图（读法四档 + 服务哪个阶段）
+- [x] M2：首批 drill（msg-parse / options-uas / transaction-timers / mental-model）
 - [ ] M2：跑通 α-1（消息 round-trip），把"我踩到的"回写
 - [ ] M2：`vocab/candidates.yaml` 晋升流程跑通（含晋升脚本或手工口令）
 - [ ] M2：`wiki/questions/` 首批真问题 + file-back 样板
