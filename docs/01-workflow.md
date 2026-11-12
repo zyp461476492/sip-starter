@@ -42,12 +42,13 @@
 
 ## 遗留清单（M2 / M3 要补的东西）
 
-- [ ] M2：`plan.yaml` 铺完 SIP 八阶段全部任务，每项都有可验证的 `done_when`
+- [x] M2：`plan.yaml` 改成按里程碑（α 报文 / β 事务 / γ 对话与注册 / δ B2BUA / ε 互通）组织
+- [x] M2：`wiki/specs/rfc3261.md` 章节地图（读/查/跳 + 服务哪个里程碑）
+- [x] M2：首批三个 drill（msg-parse / options-uas / transaction-timers）
+- [ ] M2：跑通 α-1（消息 round-trip），把"我踩到的"回写
 - [ ] M2：`vocab/candidates.yaml` 晋升流程跑通（含晋升脚本或手工口令）
 - [ ] M2：`wiki/questions/` 首批真问题 + file-back 样板
-- [ ] M2：`sip/labs/drills/` 前两个练习（REGISTER 全流程、IST/NIST 状态推演）
-- [ ] M3：配套 RFC 全量入库（3262/3264/3263/3581/4028/4320/5626/6026/6665…）+ errata 对齐
-- [ ] M3：`wiki/specs/` 每个 RFC 一页，`updated_by`/`errata` 从 rfc-editor 抄
+- [ ] M3：配套 RFC 增量入库（3581/5626/4028/3264/4733/4475…）+ errata 对齐
 - [ ] M3：`sip/labs/abnf/` 抽出 ABNF 并跑 RFC 4475 torture tests
 - [ ] M3：lint 脚本化（锚点存在性 + 时效性检查）
-- [ ] M3：`media/` 建空壳 + `topic.md`（不动内容）
+- [ ] M3：`media/` 开内容（SDP 3264 + RTP + DTMF 4733，δ 里程碑需要）

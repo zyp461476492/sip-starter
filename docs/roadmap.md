@@ -2,49 +2,65 @@
 
 # Roadmap
 
-## M1 · 最小闭环 ✅ 目标
+**目标**：亲手实现一个 FreeSWITCH-like 组件的信令内核（自研 SIP 栈）。
+本仓=知识库 + labs 最小验证件，实现另起仓库（ADR-0004）。
 
-**目的**：把管道跑通、把结构的错在一小时内暴露，不追求内容量。
+学习里程碑（α–ε）定义在 `plan/plan.yaml`；
+仓库里程碑（M1–M4）是"把支撑这事的工具建好"。
+
+| 学习里程碑 | 对应仓库里程碑 |
+|---|---|
+| — | M1 最小闭环 ✅ |
+| — | M2 章节地图 + 计划落地（进行中） |
+| α 报文 / β 事务 | M2 |
+| γ 对话与注册 / δ B2BUA | M3 |
+| ε 互通与排障 | M4 |
+
+## M1 · 最小闭环 ✅
+
+目录骨架、`AGENTS.md`、`docs/` 全套、rfc3261 入库、wiki 三页样板、vocab 种子、
+站点三视图、`npm run check`（锚点校验）。已交付。
+
+## M2 · 章节地图 + 计划落地（进行中）
+
+**目的**：先定"读哪几节、为哪个里程碑服务"，再动手；避免 269 页线性读。
 
 | 产出 | 验收 |
 |---|---|
-| 目录骨架（`sip/ media/ wiki/ plan/ vocab/ site/ docs/ scripts/`） | 结构符合 `00-design.md` |
-| `AGENTS.md`（约束 + 冷启动路由 + 收尾义务） | 新会话只读它就能正确工作 |
-| `sip/raw/rfc/rfc3261.txt` + `MANIFEST.md` + 抓取脚本 | sha256 可复核 |
-| `wiki/` 样板 3 页 + `index.md` + `log.md` | 所有 `§` 锚点能在 raw 里 grep 到 |
-| `vocab/terms.yaml` 5 条 + `schema.md` | 含 `domain_meaning` / `confusion` |
-| `plan/plan.yaml` 2 项 | 站点能显示"已支撑 / 未支撑" |
-| `site/build.mjs` + 三视图 | `npm run site` 后浏览器点得通 |
-| `docs/` 全套（含 ADR 0001–0003、memory 四件） | 冷启动可续 |
+| `wiki/specs/rfc3261.md` 章节地图（读/查/跳 + 服务里程碑） | 每节都有归属，且能指出"这节现在不读" |
+| `plan/plan.yaml` 改为 α–ε 里程碑组织，17 个任务 | 每个 task 的 `done_when` 可被工具验证 |
+| `sip/labs/drills/` 首批 3 个 drill | 判据可执行，无"理解了"这类词 |
+| `docs/01-workflow.md` 写明"读 spec 的时机" | 新会话不会再去通读 RFC |
+| α-1（消息 round-trip）跑通 | 字节级一致 |
 
-## M2 · 计划全貌 + 学习纪律
+**验收**：能连续两周按站点计划推进，且每个 task 完成时都留下一个可跑的 drill。
 
-- `plan/plan.yaml` 铺完 SIP 八阶段、数十个任务，每项 `done_when` 可验证
-- 生词候选池流程上线（ingest 抽 → 人确认晋升）
-- `wiki/questions/` 首批真问题 + file-back 样板
-- 站点加复习抽卡与进度条细化
-- `sip/labs/drills/` 前两个练习（REGISTER 全流程、IST/NIST 状态推演）
+## M3 · γ + δ（对话、注册、B2BUA）
 
-**验收**：能连续两周每天按站点给的任务学，且 wiki 页数/生词数同步增长。
+- `sip/labs/` 增量验证件：registrar、Digest（401/407）、dialog 匹配、双 leg 呼叫
+- `media/` 开内容：SDP 3264（offer/answer）、RTP relay、DTMF 4733 —— **δ 里程碑的硬依赖**
+- 配套 RFC 增量入库（3581/5626/4028/3264/4733/4475…）
+- `sip/labs/abnf/` ABNF 抽出 + RFC 4475 torture tests
 
-## M3 · 证据层铺全 + lint 可执行
+**验收**：两台真实软电话经本机 B2BUA 双向通话，异常分支不残留状态。
 
-- 配套 RFC 全量入库（3262/3264/3263/3581/4028/4320/5626/6026/6665…）+ errata 对齐
-- `wiki/specs/` 每个 RFC 一页，`updated_by`/`errata` 字段从 rfc-editor 抄
-- `sip/labs/abnf/` ABNF 抽出 + RFC 4475 torture tests 跑通
-- lint 脚本化：锚点存在性 + 时效性检查
-- `media/` 建空壳 + `topic.md`
+## M4 · ε 互通与排障
 
-**验收**：`npm run check` 全绿；随便问一个 SIP 问题，wiki 能给出带锚点的答案且锚点可复核。
+- 与 Linphone / MicroSIP / 真 FreeSWITCH 三方向互通
+- NAT（rport/outbound）、session timer（4028）
+- lint 脚本化：锚点存在性 + "是否被 Updated by 取代"
+- `wiki/specs/` 每个入库 RFC 一页，`updated_by`/`errata` 从 rfc-editor 抄
+
+**验收**：`npm run check` 全绿；给定的 pcap 能按"传输/事务/对话/路由/认证/SDP"分层定位问题。
 
 ## 长期义务（贯穿始终）
 
 每次会话收尾更新 `status.md` + `journal.md` + `open-threads.md`；新坑进 `facts.md`。
 这条不执行，整个记忆层三周就断更。
 
-## 毕业（SIP 阶段结束时）
+## 毕业
 
-- `wiki/` 保留（长期资产）
-- `plan/plan.yaml` 归档为 `plan/archive/2026-sip.yaml`
-- `docs/memory/facts.md` 保留（跨主题复用）
-- `media/` 开始按同一套流程滚
+- `wiki/` 保留（长期资产，跨主题复用）
+- `plan/plan.yaml` 归档为 `plan/archive/<年份>-sip.yaml`
+- `sip/labs/` 的验证件按 ADR-0004 处置：长青的迁去实现仓，其余丢弃
+- `media/` 按同一套流程继续滚

@@ -1,34 +1,188 @@
 # 学习计划：站点唯一数据源。字段说明见同目录 README.md。
 # 纪律：`wiki:` / `drills:` 里只写能解析的 slug，站点据此判定"已支撑/未支撑"。
+#
+# 阶段按"自研 SIP 栈的可运行里程碑"组织（α 报文 → β 事务 → γ 对话/注册 → δ B2BUA → ε 互通），
+# 不按 RFC 章节组织。章节到里程碑的映射见 wiki/specs/rfc3261.md。
+# 目标：亲手实现一个 FreeSWITCH-like 组件的信令内核；本仓只放 labs 验证件（ADR-0004）。
 
 active_topic: sip
 updated: 2026-11-12
 
 phases:
-  - id: p1
-    title: 第 1 阶段 · 消息与语法
-    goal: 能徒手写出一个合法 SIP 请求，并解释每个头域为什么必须存在
+  - id: alpha
+    title: α 报文层 · 解析、序列化、UDP/TCP 收发
+    goal: 能收发并正确切分真实软电话的报文，对 OPTIONS 给出合法应答
     tasks:
-      - id: p1-t1
-        title: SIP 消息结构与头域格式
-        why: 后面所有排障都从"这条报文明不合法"开始
+      - id: alpha-1
+        title: 消息与头域的解析/序列化（round-trip）
+        why: 后面每层都以此为前提；先把它做到"读进来再写出去字节级一致"
         prereq: []
-        sources: ["RFC3261 §7", "RFC3261 §25"]
+        sources: ["RFC3261 §7.1", "RFC3261 §7.2", "RFC3261 §7.3"]
+        wiki: ["specs/rfc3261", "messages/headers/via"]
+        drills: ["msg-parse"]
+        done_when: 解析 §24.1 的 F1 REGISTER 与 F2 200 OK，字段级 round-trip 与原文字节一致（除页眉页脚）
+        status: todo
+      - id: alpha-2
+        title: SIP URI 解析与比较
+        why: 路由、注册绑定、对话内请求都要先能正确解析和比较 URI
+        prereq: [alpha-1]
+        sources: ["RFC3261 §19.1", "RFC3261 §19.1.4"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: 覆盖 userinfo/端口/参数/headers/转义的用例全过，且能实现 §19.1.4 的等价判定
+        status: todo
+      - id: alpha-3
+        title: Framing 与收发分离（UDP vs TCP）
+        why: UDP 一包一消息、TCP 靠 Content-Length 断句，这里写错会表现为"偶发解析失败"
+        prereq: [alpha-1]
+        sources: ["RFC3261 §7.5", "RFC3261 §18", "RFC3261 §18.3"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: 同一份报文流在 UDP/TCP 两种模式下都能正确切分；TCP 上出现粘包/半包不误判
+        status: todo
+      - id: alpha-4
+        title: 最小 UAS —— 正确应答 OPTIONS
+        why: 第一个能被第三方工具验收的产物，先把"合法的响应"这件事做对
+        prereq: [alpha-1, alpha-3]
+        sources: ["RFC3261 §11.2", "RFC3261 §8.2.6"]
+        wiki: ["specs/rfc3261"]
+        drills: ["options-uas"]
+        done_when: sipsak/sipexer 打 OPTIONS 收到 200，且 To.tag、Via 回显、Content-Length 全部正确
+        status: todo
+
+  - id: beta
+    title: β 事务层 · 四套状态机与定时器
+    goal: 四个状态机逐条实现，能在丢包/重包/超时下与标准行为一致
+    tasks:
+      - id: beta-1
+        title: NICT/NIST（非 INVITE 事务）+ Timer E/F/K/J
+        why: 结构最简单的一对，先把定时器轮和"重传来驱动响应重传"的机制跑顺
+        prereq: [alpha-4]
+        sources: ["RFC3261 §17.1.2", "RFC3261 §17.2.2", "RFC3261 附录 A Table 4"]
+        wiki: ["concepts/transaction", "specs/rfc3261"]
+        drills: ["transaction-timers"]
+        done_when: 同一请求重传 3 次只产生 1 个响应；收到 1xx 后请求仍以 T2 间隔继续重传
+        status: todo
+      - id: beta-2
+        title: ICT/IST（INVITE 事务）+ ACK 的两套规则
+        why: SIP 里最容易写错的地方；2xx 之后的 ACK 不属于事务这条必须落到代码结构上
+        prereq: [beta-1]
+        sources: ["RFC3261 §17.1.1", "RFC3261 §17.1.1.3", "RFC3261 §17.2.1"]
+        wiki: ["concepts/transaction", "flows/basic-call"]
+        drills: []
+        done_when: 非 2xx 的 ACK 命中同一事务且不再重传响应；2xx 后的 ACK 走独立路径，重传由 UAS 负责
+        status: todo
+      - id: beta-3
+        title: 事务匹配规则（响应↔客户端事务、请求↔服务端事务）
+        why: 匹配写错会出现"响应被别的事务吃掉"和幽灵重传，抓包看不出来
+        prereq: [beta-2]
+        sources: ["RFC3261 §17.1.3", "RFC3261 §17.2.3", "RFC3261 §8.1.1.7"]
+        wiki: ["messages/headers/via", "concepts/transaction"]
+        drills: []
+        done_when: 两个 branch 不同的 INVITE 不互相吞响应；CANCEL/ACK 复用 branch 时能被正确归并
+        status: todo
+      - id: beta-4
+        title: 可注入时钟 + 64*T1 超时路径
+        why: 真实定时器不可测；把时间做成依赖注入，才能在 1 秒内验证 32 秒的行为
+        prereq: [beta-1]
+        sources: ["RFC3261 §17", "RFC3261 附录 A Table 4"]
+        wiki: ["concepts/transaction"]
+        drills: ["transaction-timers"]
+        done_when: 假时钟下一个 INVITE 事务完整走完 Timer B 超时路径，状态迁移与 §17 图一致
+        status: todo
+
+  - id: gamma
+    title: γ 对话与注册 · registrar + Digest + dialog
+    goal: 真实软电话能注册成功，对话内请求能正确匹配与路由
+    tasks:
+      - id: gamma-1
+        title: Registrar：绑定存储、过期、注销、查询
+        why: 没有 registrar 就只能硬编码 URI 呼通，无法做真实互通
+        prereq: [beta-3]
+        sources: ["RFC3261 §10.2", "RFC3261 §10.3", "RFC3261 §19.1.4"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: 注册/刷新/查询/注销（Expires:0）四种操作与 Contact 比较都符合 §10.3
+        status: todo
+      - id: gamma-2
+        title: Digest 鉴权（401 与 407 两套流程）
+        why: 任何真实设备默认要求鉴权；401（UAS）与 407（代理）的差别是常见混淆点
+        prereq: [gamma-1]
+        sources: ["RFC3261 §22.1", "RFC3261 §22.2", "RFC3261 §22.3", "RFC3261 §22.4"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: Linphone 用正确口令注册成功；错误口令收到 403；401/407 不混用
+        status: todo
+      - id: gamma-3
+        title: Dialog 状态、tag 规则、对话内路由
+        why: 对话是 BYE/re-INVITE 的容器，也是排障时"消息到底该发给谁"的判据
+        prereq: [gamma-2]
+        sources: ["RFC3261 §12", "RFC3261 §19.3", "RFC3261 §16.6"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: BYE 只在正确对话内匹配成功；Route 集按 Record-Route 逆序使用；错 tag 的 BYE 被正确拒绝
+        status: todo
+
+  - id: delta
+    title: δ B2BUA · 双 leg 呼叫打通
+    goal: alice → 服务器 → bob 双向音频通，异常分支不残留状态
+    tasks:
+      - id: delta-1
+        title: 双 leg 呼叫建立与 SDP 透传
+        why: 这是"类 FreeSWITCH 组件"的最小可信产物
+        prereq: [gamma-3]
+        sources: ["RFC3261 §13", "RFC3261 §8.1", "RFC3261 §8.2"]
+        wiki: ["flows/basic-call"]
+        drills: []
+        done_when: 两台真实软电话经本机转接通话，双向音频可达（先 RTP relay，不做转码）
+        status: todo
+      - id: delta-2
+        title: 取消与失败分支（CANCEL/487、忙、拒接、超时）
+        why: 真实世界的呼叫多数不成功；异常路径不干净会留下僵尸 leg 和占用的端口
+        prereq: [delta-1]
+        sources: ["RFC3261 §9", "RFC3261 §15", "RFC3261 §21.4"]
+        wiki: ["flows/basic-call", "concepts/transaction"]
+        drills: []
+        done_when: 忙/拒接/无应答/主叫取消四种情况下，两侧 leg 与对话都被正确释放
+        status: todo
+      - id: delta-3
+        title: 会话修改与被叫挂断（re-INVITE、hold、BYE）
+        why: hold 与 re-INVITE 是最常见的"通着通着就哑了"的来源，也是 glare 的现场
+        prereq: [delta-2]
+        sources: ["RFC3261 §14", "RFC3261 §15", "RFC3261 §21.4.27"]
+        wiki: ["specs/rfc3261"]
+        drills: []
+        done_when: hold/resume 双向正确；同时 re-INVITE 时按 §14.2 处理 glare，不产生双活会话
+        status: todo
+
+  - id: epsilon
+    title: ε 互通与排障 · 与真设备同台
+    goal: 不是"我的实现能跑"，而是"别人的设备愿意跟我跑"
+    tasks:
+      - id: epsilon-1
+        title: 与 Linphone / MicroSIP / 一台真 FreeSWITCH 互通
+        why: 互通暴露的全是自己在实验室里想不到的边缘行为
+        prereq: [delta-3]
+        sources: ["RFC3261 §18", "RFC3261 §24"]
+        wiki: ["flows/basic-call"]
+        drills: []
+        done_when: 与三个对端各打通 3 次（含挂断与互拨），Wireshark 全链路无异常重传
+        status: todo
+      - id: epsilon-2
+        title: NAT 与保活（rport、outbound）
+        why: 终端在 NAT 后是常态；不做这层，只能同网段自娱自乐
+        prereq: [epsilon-1]
+        sources: ["RFC3581（待入库）", "RFC5626（待入库）"]
         wiki: ["messages/headers/via"]
         drills: []
-        done_when: 不查文档写出一个带 Via/Max-Forwards/To/From/Call-ID/CSeq/Contact 的 INVITE，并逐头说明作用
-        status: doing
-
-  - id: p2
-    title: 第 2 阶段 · 事务层
-    goal: 能画出 ICT/IST/NICT/NIST 状态机，并解释每个定时器存在的理由
-    tasks:
-      - id: p2-t1
-        title: 事务的定义与四种组合
-        why: 事务是 SIP 里"重传与去重"的全部机制所在，也是抓包分析的第一分层
-        prereq: [p1-t1]
-        sources: ["RFC3261 §17", "RFC3261 §17.1.1.1", "RFC3261 §17.1.2.1"]
-        wiki: ["concepts/transaction"]
+        done_when: NAT 后的终端能注册并被呼通；连接失效后能按保活机制恢复
+        status: todo
+      - id: epsilon-3
+        title: Session timer（RFC 4028，待入库）
+        why: 长通话的存活与"半开连接"检测，产品化必需
+        prereq: [epsilon-1]
+        sources: ["RFC4028（待入库）"]
+        wiki: []
         drills: []
-        done_when: 不看笔记说清"为什么 2xx 之后的 ACK 不属于 INVITE 事务"，并说出它对排障的影响
-        status: done
+        done_when: 会话刷新按协商的 Session-Expires 工作，超时按 §4028 拆除
+        status: todo

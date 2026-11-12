@@ -5,7 +5,17 @@
 
 ---
 
-## [2026-11-12] ingest | RFC3261 §17 Transactions
+## [2026-11-12] ingest | RFC3261 章节地图（不新增引文，只做分类与路线）
+
+- 新建 `specs/rfc3261.md`：四类文档分类、28 节地图（服务 α–ε 哪个里程碑）、三条阅读路线、陷阱清单
+- `updated_by` / errata 标 `unknown`（未核 rfc-editor，按 `AGENTS.md` §3 不凭记忆填）
+- 更新 `wiki/index.md` specs 区
+
+## [2026-11-12] query | 该不该“粗读一遍”269 页
+
+- 结论 file back 进 `specs/rfc3261.md` 的“文档性质”与 `docs/01-workflow.md` 的“读 spec 的时机”
+- 目标从“学 SIP”定格为“自研 SIP 栈 → FreeSWITCH-like 组件”，见 ADR-0004
+
 
 - 新建 `concepts/transaction.md`：定义、ACK 归属例外、ICT/IST/NICT/NIST、计时器（附录 Table 4）
 - 更新 `wiki/index.md` concepts 区

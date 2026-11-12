@@ -9,6 +9,7 @@
 | [0001](0001-single-wiki-layer.md) | 一个全局编译层 `wiki/`，协议只切证据层 | current |
 | [0002](0002-no-vitepress.md) | 站点用自写生成器，不用 VitePress | current |
 | [0003](0003-yaml-as-source-of-truth.md) | 计划与词库以 yaml 为唯一数据源 | current |
+| [0004](0004-impl-lives-elsewhere.md) | 本仓不写实现，只放 labs 最小验证件 | current |
 
 ## 模板
 

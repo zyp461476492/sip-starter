@@ -11,12 +11,12 @@
 
 ## 待办（M2）
 
-- [ ] `plan/plan.yaml` 铺完 SIP 八阶段全部任务
-  - 触发：M1 样板页人工核对通过后
-- [ ] `sip/labs/drills/` 第一个练习：REGISTER 全流程 + 401/407 两次重发
-  - 需要：一条真实的 401 挑战报文样例（可从 §22.1 推，或补一份抓包）
-- [ ] 生词晋升流程：`vocab/candidates.yaml` → `terms.yaml` 的口令或脚本
-  - 触发：候选池首次积累到 10 条
+- [ ] **α-1 消息 round-trip**（下一个开工项，drill 已写好：`sip/labs/drills/msg-parse.md`）
+  - 卡点：实现语言未定 —— 建议先在本仓 `labs/` 用目标语言写验证件，将来直接搬迁
+- [ ] α-4 验收工具链：本机是否装了 `sipsak` / `sipexer` / `sipp` / `tshark`
+  - 触发：做 α-4 前一天确认，缺则先装（也可写 docker 命令代替）
+- [ ] `vocab/candidates.yaml` 晋升流程（含晋升脚本或手工口令）
+- [ ] `wiki/questions/` 首批真问题 + file-back 样板
 
 ## 待验证
 
