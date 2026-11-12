@@ -10,6 +10,7 @@
 | 知道一次 ingest / 一次学习该怎么动手 | [`01-workflow.md`](01-workflow.md) |
 | 把站点跑起来 / 改样式 / 排构建故障 | [`02-site.md`](02-site.md) |
 | **知道怎么读规范、怎么切里程碑、验收物怎么分** | [`03-learning-method.md`](03-learning-method.md) |
+| 知道 L1–L3 的实验环境（docker 镜像、recipe）怎么设计 | [`04-lab-toolbox.md`](04-lab-toolbox.md) |
 | 知道里程碑做到哪、验收标准是什么 | [`roadmap.md`](roadmap.md) |
 | 知道**现在**做到哪、下一步做什么 | [`status.md`](status.md) |
 | 知道某个决定当初为什么这么定 | [`adr/`](adr/) |

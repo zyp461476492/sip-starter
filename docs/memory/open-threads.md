@@ -12,8 +12,10 @@
 ## 待办（M2）
 
 - [ ] **L0-1**（下一个开工项）读 §4 + §24.1/§24.2，40min，不写代码（`plan.yaml` 的 `est`）
-- [ ] **L1-0 工具链**：本机是否已有 `sipsak` / `sipp` / `tshark`
-  - 触发：进入 L1 前一天确认；缺的写 docker 命令，不要卡在装环境
+- [ ] **L1-0 实验环境**：按 `docs/04-lab-toolbox.md` 建 docker 镜像 + 前 3 个 recipe
+  - 已定：v1 = Dockerfile + run.sh + recipes/00,01,02；未动手
+  - 已验证：本机 sipsak/sipp/tshark **均未安装**，docker 29.7.2 **可用**，sudo 需密码
+  - 待验证：`baresip`/`pjsua` 包名；`--network host` 下 tshark 能否看到宿主侧流量
 - [ ] **L1-1 抓包**：需要两台软电话或 `sipp` uas + `pjsua`
   - 触发：L1-0 完成时
 - [ ] `vocab/candidates.yaml` 晋升流程（含晋升脚本或手工口令）

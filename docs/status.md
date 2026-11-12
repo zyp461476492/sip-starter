@@ -24,7 +24,8 @@ last_updated: 2026-11-12
 
 1. **L0-1** 读 §4 + §24.1/§24.2（40min，不写代码）→ 能画梯形拓扑
 2. **L0-2** 把 F1 REGISTER / F2 200 OK 逐头标注（30min）
-3. **L1-0** 工具链就绪：sipsak / sipp / tshark / 一台软电话（缺的用 docker）
+3. **L1-0** 实验环境就绪：按 `docs/04-lab-toolbox.md` 建 `sip/labs/toolbox/`（Dockerfile + run.sh + 前 3 个 recipe）
+   —— **方案已定，尚未动手**；本机无 sipsak/sipp/tshark，docker 有（29.7.2），sudo 需密码
 
 > 前三段（L0–L3）合计约 7–12 小时，**期间不写实现代码**（`AGENTS.md` §3 第 10 条）。
 
