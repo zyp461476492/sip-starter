@@ -55,6 +55,41 @@ function parseFrontmatter(raw) {
 const WIKI = join(ROOT, 'wiki');
 const SPECIAL = new Set(['index.md', 'log.md']);
 
+/* ── 证据锚点 / 练习 的链接化 ───────────────────────────
+   sources:"RFC3261 §7.1" → 原文锚点页；drills → 练习页          */
+
+let H = new Set(); // RFC3261 章节号集合（从原文抽）
+const DRILLS = new Map(); // slug → { slug, data, body }
+
+function collectDrills(dirName = 'sip/labs/drills') {
+  const dir = join(ROOT, dirName);
+  const map = new Map();
+  if (!existsSync(dir)) return map;
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.md') || f === 'README.md') continue;
+    const { data, body } = parseFrontmatter(readFileSync(join(dir, f), 'utf8'));
+    const slug = data.slug || f.replace(/\.md$/, '');
+    map.set(slug, { slug, data, body });
+  }
+  return map;
+}
+
+function sourceChip(spec, rel) {
+  const s = String(spec);
+  if (/^RFC3261\s*附录\s*A/.test(s)) return `<a class="chip src" href="${rel}raw/rfc3261.html#sec-A">${esc(s)}</a>`;
+  const m = s.match(/^(RFC\d+)\s*§\s*([0-9]+(?:\.[0-9]+)*)/);
+  if (m && m[1] === 'RFC3261') {
+    if (H.has(m[2])) return `<a class="chip src" href="${rel}raw/rfc3261.html#sec-${m[2]}">${esc(s)}</a>`;
+    return `<span class="chip src gap" title="原文里找不到该章节">${esc(s)}</span>`;
+  }
+  return `<span class="chip src gap" title="原文尚未入库，暂不可跳">${esc(s)}</span>`;
+}
+
+function drillChip(slug, rel) {
+  if (DRILLS.has(slug)) return `<a class="chip" href="${rel}drills/${slug}.html">drill: ${esc(slug)}</a>`;
+  return `<span class="chip gap" title="练习文件尚未创建">drill: ${esc(slug)}</span>`;
+}
+
 function collectWiki() {
   const pages = new Map();
   for (const file of walk(WIKI)) {
@@ -108,6 +143,7 @@ const NAV = (rel, active) => `
     <a href="${rel}index.html" class="${active === 'plan' ? 'on' : ''}">学习计划</a>
     <a href="${rel}wiki/index.html" class="${active === 'wiki' ? 'on' : ''}">知识库</a>
     <a href="${rel}vocab.html" class="${active === 'vocab' ? 'on' : ''}">生词本</a>
+    <a href="${rel}raw/rfc3261.html" class="${active === 'raw' ? 'on' : ''}">RFC 原文</a>
   </nav>
   <div class="search">
     <input id="q" type="search" placeholder="搜索 wiki / 生词…" autocomplete="off">
@@ -155,9 +191,9 @@ function renderPlan(plan, pages, rel) {
   <p class="why">为什么：${esc(t.why)}</p>
   <p class="done-when"><b>完成判据</b>：${esc(t.done_when)}</p>
   <div class="chips">
-    ${(t.sources || []).map((s) => `<span class="chip src">${esc(s)}</span>`).join('')}
+    ${(t.sources || []).map((s) => sourceChip(s, rel)).join('')}
     ${(t.wiki || []).map(wikiChip).join('')}
-    ${(t.drills || []).map((d) => `<span class="chip">drill: ${esc(d)}</span>`).join('')}
+    ${(t.drills || []).map((d) => drillChip(d, rel)).join('')}
     ${t.prereq && t.prereq.length ? `<span class="chip">前置：${t.prereq.map(esc).join(', ')}</span>` : ''}
   </div>
 </article>`
@@ -249,9 +285,11 @@ function renderWikiPage(page, pages, terms, rel) {
   const back = page.backlinks.length
     ? `<ul>${page.backlinks.map((b) => `<li><a class="wl" href="${rel}wiki/${b}.html">${esc(pages.get(b).data.title)}</a></li>`).join('')}</ul>`
     : '<p class="muted">暂无入链。</p>';
-  const specs = (page.data.specs || []).map((s) => `<span class="chip src">${esc(s)}</span>`).join('');
+  const specs = (page.data.specs || []).map((s) => sourceChip(s, rel)).join('');
+  const drills = (page.data.drills || []).map((d) => drillChip(d, rel)).join('');
   const foot = `<aside class="pagefoot">
-  <div><h4>证据锚点</h4><div class="chips">${specs || '<span class="muted">—</span>'}</div></div>
+  <div><h4>证据锚点</h4><div class="chips">${specs || '<span class="muted">—</span>'}</div>
+    ${drills ? `<h4 style="margin-top:12px">相关练习</h4><div class="chips">${drills}</div>` : ''}</div>
   <div><h4>反向链接</h4>${back}</div>
   <div><h4>相关生词</h4>${
     relVocab.length ? `<div class="chips">${relVocab.map((t) => `<span class="chip">${esc(t.term)}</span>`).join('')}</div>` : '<p class="muted">—</p>'
@@ -263,6 +301,88 @@ function renderWikiPage(page, pages, terms, rel) {
   <p class="topics">${(page.data.topics || []).map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</p>
   ${html}
   ${foot}
+</article>`;
+}
+
+/* ── RFC 原文页（按节加锁点） ───────────────────────────── */
+
+let RFC_CACHE = null;
+function getRfc() {
+  if (!RFC_CACHE) RFC_CACHE = rfcSections();
+  return RFC_CACHE;
+}
+
+function rfcSections(file = 'sip/raw/rfc/rfc3261.txt') {
+  const raw = readFileSync(join(ROOT, file), 'utf8');
+  const noise = [/^Rosenberg, et\. al\./, /^RFC 3261\s{2,}SIP: Session Initiation Protocol/];
+  const pre = [];
+  const secs = [];
+  let cur = null;
+  let inToc = false;
+  for (const rawLine of raw.split('\n')) {
+    const line = rawLine.replace(/\f/g, '').replace(/\s+$/, '');
+    if (noise.some((re) => re.test(line))) continue;
+    if (/^Table of Contents\s*$/.test(line)) {
+      inToc = true;
+      pre.push('（原文目录略——用右上导航，或看 rfc-editor 页面）');
+      continue;
+    }
+    const m = line.match(/^(\d{1,2}(?:\.\d{1,3})*)\.?\s+([A-Za-z0-9].*)$/);
+    const a = /^A\s+Table of Timer Values\s*$/.test(line);
+    if (m || a) {
+      inToc = false;
+      cur = { num: m ? m[1] : 'A', title: m ? m[2] : 'Table of Timer Values', lines: [] };
+      secs.push(cur);
+      continue;
+    }
+    if (inToc) continue;
+    (cur ? cur.lines : pre).push(line);
+  }
+  return { pre, secs };
+}
+
+function renderRawPage(rel) {
+  const { pre, secs } = getRfc();
+  const toc = secs
+    .map((s) => {
+      const lvl = s.num === 'A' ? 1 : s.num.split('.').length;
+      return `<a class="toc-l${Math.min(lvl, 3)}" href="#sec-${s.num}"><b>${esc(s.num)}</b> ${esc(s.title)}</a>`;
+    })
+    .join('');
+  const body = secs
+    .map(
+      (s) => `<section id="sec-${s.num}">
+  <h3>${esc(s.num)} &nbsp;${esc(s.title)} <a class="anchor" href="#sec-${s.num}">#</a></h3>
+  <pre class="rfctext">${esc(s.lines.join('\n').replace(/^\n+|\n+$/g, ''))}</pre>
+</section>`
+    )
+    .join('\n');
+  return `<div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
+<h1>RFC 3261 原文 <small>SIP: Session Initiation Protocol · 269 页</small></h1>
+<p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。</p>
+<div class="rawlayout">
+  <nav class="rawtoc">${toc}</nav>
+  <div class="rawbody">
+    ${pre.filter((l) => l.trim()).length ? `<section id="sec-pre"><pre class="rfctext">${esc(pre.join('\n').replace(/^\n+|\n+$/g, ''))}</pre></section>` : ''}
+    ${body}
+  </div>
+</div>`;
+}
+
+function renderDrillPage(d, pages, rel) {
+  const html = renderMd(d.body, { pages, rel });
+  const specs = (d.data.specs || []).map((s) => sourceChip(s, rel)).join('');
+  const wl = (d.data.wiki || [])
+    .map((w) => (pages.has(w) ? `<a class="chip ok" href="${rel}wiki/${w}.html">✓ ${esc(w)}</a>` : `<span class="chip gap">${esc(w)}</span>`))
+    .join('');
+  return `<div class="crumb"><a href="${rel}index.html">学习计划</a> / 练习 / ${esc(d.slug)}</div>
+<article class="wikipage">
+  <div class="pagehead"><h1>drill: ${esc(d.slug)}</h1><span class="badge">${esc(d.data.phase || '')}</span></div>
+  ${html}
+  <aside class="pagefoot">
+    <div><h4>证据锚点</h4><div class="chips">${specs || '<span class="muted">—</span>'}</div></div>
+    <div><h4>相关 wiki</h4><div class="chips">${wl || '<span class="muted">—</span>'}</div></div>
+  </aside>
 </article>`;
 }
 
@@ -283,6 +403,8 @@ function main() {
   const terms = yaml.load(read('vocab/terms.yaml')) || [];
   const candidates = existsSync(join(ROOT, 'vocab/candidates.yaml')) ? yaml.load(read('vocab/candidates.yaml')) || [] : [];
   const pages = collectWiki();
+  H = new Set(getRfc().secs.map((s) => s.num));
+  for (const [k, v] of collectDrills()) DRILLS.set(k, v);
 
   /* 校验 */
   const VALID_VOCAB = new Set(['candidate', 'learning', 'known']);
@@ -300,16 +422,18 @@ function main() {
       for (const f of ['id', 'title', 'why', 'done_when', 'status']) if (!t[f]) errors.push(`plan.yaml ${t.id || '(无 id)'} 缺字段 ${f}`);
       if (t.status && !VALID_TASK.has(t.status)) errors.push(`task 状态非法: ${t.status} (${t.id})`);
       for (const w of t.wiki || []) if (!pages.has(w)) errors.push(`plan(${t.id}) 引用了不存在的 wiki 页: ${w}`);
+      for (const d of t.drills || []) if (!DRILLS.has(d)) errors.push(`plan(${t.id}) 引用了不存在的 drill: ${d}`);
     }
   }
   // 锚点存在性 + 死链
-  const headings = rfcHeadings();
+  const headings = H;
   for (const page of pages.values()) {
     const secs = [...page.body.matchAll(/RFC ?3261 ?§\s*([0-9]+(?:\.[0-9]+)*)/g)].map((m) => m[1]);
     for (const s of new Set([...(page.data.specs || []).flatMap((x) => [...String(x).matchAll(/§\s*([0-9]+(?:\.[0-9]+)*)/g)].map((m) => m[1])), ...secs])) {
       if (headings.size && !headings.has(s)) errors.push(`锚点不存在：RFC3261 §${s}（${page.slug}）`);
     }
     for (const l of page.links) if (!pages.has(l)) warn.push(`红链：${page.slug} → ${l}`);
+    for (const d of page.data.drills || []) if (!DRILLS.has(d)) errors.push(`wiki(${page.slug}) 引用了不存在的 drill: ${d}`);
   }
 
   const report = () => {
@@ -352,11 +476,22 @@ function main() {
   // 3. 生词
   writePage('vocab.html', shell({ title: '生词本', rel: '', active: 'vocab', body: renderVocab(terms, candidates, '') }));
 
+  // 4. RFC 原文锁点页
+  writePage('raw/rfc3261.html', shell({ title: 'RFC 3261 原文', rel: '../', active: 'raw', body: renderRawPage('../') }));
+
+  // 5. 练习页
+  for (const d of DRILLS.values()) {
+    const rel = relFrom(`drills/${d.slug}.html`);
+    writePage(`drills/${d.slug}.html`, shell({ title: `drill: ${d.slug}`, rel, active: '', body: renderDrillPage(d, pages, rel) }));
+  }
+
   // 4. 搜索索引
   const index = [
     { path: 'index.html', title: '学习计划', text: plan.phases.map((p) => p.title + ' ' + (p.tasks || []).map((t) => t.title + ' ' + t.why + ' ' + t.done_when).join(' ')).join(' ') },
     ...[...pages.values()].map((p) => ({ path: `wiki/${p.slug}.html`, title: p.data.title, text: p.body.replace(/[#>*`\[\]]/g, ' ') })),
     { path: 'vocab.html', title: '生词本', text: terms.map((t) => `${t.term} ${t.domain_meaning} ${t.confusion}`).join(' ') },
+    ...[...DRILLS.values()].map((d) => ({ path: `drills/${d.slug}.html`, title: `drill: ${d.slug}`, text: d.body.replace(/[#>*`\[\]]/g, ' ') })),
+    { path: 'raw/rfc3261.html', title: 'RFC 3261 原文', text: 'RFC 3261 SIP Session Initiation Protocol 原文全文' },
   ];
   writeFileSync(join(DIST, 'search.json'), JSON.stringify(index));
 
@@ -364,18 +499,6 @@ function main() {
   console.log(`→ site/dist/  (${index.length} 条索引)`);
 
   if (MODE === '--serve') serve();
-}
-
-/* RFC 3261 的章节标题集合（用于锚点校验） */
-function rfcHeadings() {
-  const file = join(ROOT, 'sip/raw/rfc/rfc3261.txt');
-  if (!existsSync(file)) return new Set();
-  const set = new Set();
-  for (const line of readFileSync(file, 'utf8').split('\n')) {
-    const m = line.match(/^(\d+(?:\.\d+)*)\.?\s+\S/);
-    if (m) set.add(m[1]);
-  }
-  return set;
 }
 
 /* ── 本地服务 ───────────────────────────────────────────── */

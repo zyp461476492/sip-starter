@@ -46,3 +46,12 @@
   `01-workflow` 瘦身（方法移入 03，只留动作清单）；`docs/README` 加索引与“新增文档的判据”
 - 变：确立边界——**规用则在 docs，实例在 wiki**；讨论过程不留存，只留判断 + 依据
 - 留：无
+
+## [2026-11-12] M2.2 | 计划页 chip 可点：原文锁点页 + 练习页
+
+- 做：`site/build.mjs` 新增 `rfcSections()`（按节切分、剔页眉页脚、生成 `#sec-x.y` 锁点）与
+  `renderDrillPage()`；`sources` chip 链到原文、`drills` chip 链到练习页；导航加“RFC 原文”
+- 变：**原文也进了站点**（之前只能 grep txt）；`npm run check` 新增“plan/wiki 引用的 drill 必须存在”
+- 坑：首版标题正则要求 `[A-Z]` 开头，漏了 54 个以数字开头的节（如 `13.2.2.1 1xx Responses`）；
+  改为 `[A-Za-z0-9]` + 首段≤30 过滤后对齐到 314 个编号节 + 附录 A
+- 留：无

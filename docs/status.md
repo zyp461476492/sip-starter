@@ -13,6 +13,8 @@ last_updated: 2026-11-12
   `plan.yaml` 改为 α–ε 里程碑组织（17 任务）、首批 3 个 drill、`docs/01-workflow.md` 写明读法
 - M2 ✅（文档落地）：ADR-0005（学习方案的备选与否决）+ `docs/03-learning-method.md`（四分类法、
   里程碑切法、验收物三分、反模式），并把方法内容从 `01-workflow` 移过去
+- 站点补强：`§x.y` chip 现在可点 → 原文锁点页 `raw/rfc3261.html`（316 个节锁点，已剔页眉页脚）；
+  `drill:` chip → 练习页 `drills/<slug>.html`；未入库的 RFC 仍为虚线不可点
 - 校验：`npm run check` → 0 错误（红链为待建页，已在 open-threads 记录）
 
 ## 下一步（有序）

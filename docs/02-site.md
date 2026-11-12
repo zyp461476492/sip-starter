@@ -20,7 +20,21 @@ npm run check     # 只校验不写文件
 | `plan/plan.yaml` + `wiki/` 存在性 | `dist/index.html` | 学习计划（进度、下一步、wiki 支撑状态） |
 | `wiki/**/*.md`（frontmatter + 正文） | `dist/wiki/<area>/<slug>.html`、`dist/wiki/index.html` | 知识库（含页尾反链、相关生词） |
 | `vocab/*.yaml` | `dist/vocab.html` | 生词本（音标 + 发音 + 筛选 + 抽卡） |
+| `sip/raw/rfc/rfc3261.txt` | `dist/raw/rfc3261.html` | **原文锁点页**：按节切分、剔页眉页脚，`§x.y` 可直跳 |
+| `sip/labs/drills/*.md` | `dist/drills/<slug>.html` | 练习页（带证据锚点与相关 wiki） |
 | 以上全部正文 | `dist/search.json` | 全站子串搜索（几百页足够，不上向量） |
+
+## 三类 chip 的行为
+
+计划页与 wiki 页上的 chip 不是同一种东西：
+
+| chip | 外观 | 行为 |
+|---|---|---|
+| `RFC3261 §7.1` | 等宽、实线 | 可点，跳 `raw/rfc3261.html#sec-7.1` |
+| `RFC3581（待入库）` | 虚线 | 不可点——原文没入库，没有可跳的目标 |
+| `✓ specs/rfc3261` | 绿色 | 可点，跳 wiki 页（✓ = 页已存在） |
+| `drill: msg-parse` | 实线 | 可点，跳练习页 |
+| `drill: xxx`（虚线） | 虚线 | 不可点——练习文件还没建 |
 
 ## wiki 页面约定
 
@@ -71,3 +85,6 @@ updated: 2026-11-12
 | 点了「读」没声音 | 控制台 `speechSynthesis.getVoices().length`：0 = 系统无语音 → 开「在线发音」或装 `speech-dispatcher` |
 | 某个词读得不对 | 给词条加 `say` 字段覆盖朗读文本 |
 | 端口占用 | `--serve` 换端口：`node site/build.mjs --serve 5174` |
+| `§x.y` 点了 404 / 跳不到 | 章节号不在原文抽出的集合里（`H`）——先用 `grep -n "^x.y" sip/raw/rfc/rfc3261.txt` 确认写法 |
+| 原文页缺某节 | 标题行以数字开头但首段>30（被当作正文）；或标题以非字母数字字符开头 |
+| chip 变成虚线灰块 | 对应的 raw 原文或 drill 文件不存在——这是设计如此，不是 bug |
