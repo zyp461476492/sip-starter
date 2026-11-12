@@ -2,6 +2,13 @@
 
 # open-threads
 
+## 待办（M1 遗留）
+
+- [ ] 红链 `concepts/dialog`（被 `concepts/transaction` 与 `flows/basic-call` 引用）
+  - 触发：开始编译 §12 Dialogs 时
+- [ ] `flows/basic-call.md` 仍是 `status: draft`
+  - 升 `current` 的前提：① 抓一份真实 pcap 对照 ② 补一个 drill
+
 ## 待办（M2）
 
 - [ ] `plan/plan.yaml` 铺完 SIP 八阶段全部任务
