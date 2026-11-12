@@ -53,7 +53,7 @@ function parseFrontmatter(raw) {
 /* ── 读取 wiki ──────────────────────────────────────────── */
 
 const WIKI = join(ROOT, 'wiki');
-const SPECIAL = new Set(['index.md', 'log.md', 'README.md']);
+const SPECIAL = new Set(['index.md', 'log.md']);
 
 /* ── 证据锚点 / 练习 的链接化 ───────────────────────────
    sources:"RFC3261 §7.1" → 原文锚点页；drills → 练习页          */
@@ -95,7 +95,7 @@ function collectWiki() {
   for (const file of walk(WIKI)) {
     if (!file.endsWith('.md')) continue;
     const rel = relative(WIKI, file).replace(/\\/g, '/');
-    if (SPECIAL.has(rel)) continue;
+    if (SPECIAL.has(rel) || rel.split('/').pop() === 'README.md') continue;
     const slug = rel.replace(/\.md$/, '');
     const { data, body } = parseFrontmatter(readFileSync(file, 'utf8'));
     if (!data.id) errors.push(`缺 frontmatter id：wiki/${rel}`);
