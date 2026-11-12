@@ -74,10 +74,13 @@ rect 是否越界、文字估算宽度是否超出它所在（中心落入的）
 - 需要精确数值比较 → 用表格
 - 每个盒子里要塞超过 18 个 ASCII 字符 → 说明结构没拆清，先拆结构
 
-## 安装位置
+## 版本与安装
 
-本技能默认是**项目级**（`.agents/skills/svg-diagram/`）。要全局可用，复制到用户目录：
+源码放在项目的 `tools/skills/svg-diagram/`（纳入 git），装到全局：
 
 ```bash
-cp -r .agents/skills/svg-diagram ~/.pi/agent/skills/
+scripts/install-skills.sh svg-diagram     # → ~/.pi/agent/skills/svg-diagram/
 ```
+
+装完 `/reload` 生效。`tools/` 不在技能发现路径里，所以源码与已装副本不会重名冲突。
+改完技能记得重跑一次安装脚本，否则加载的还是旧副本。

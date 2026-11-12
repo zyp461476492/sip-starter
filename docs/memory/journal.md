@@ -78,7 +78,8 @@
   assets/skeleton.svg）；产出 `wiki/assets/ladder-basic-call.svg` 并内联进 `wiki/flows/basic-call`
 - 关键：**脚本查"错"（几何/文字溢出/类未定义/marker），截图查"难看"**——模型能自己看图，闭环才成立
 - 变：构建支持 `![说明](assets/x.svg)` 内联；`AGENTS.md` 加 §7 图表规则（`dg-` 前缀等）
-- 留：全局安装需切权限（`cp -r .agents/skills/svg-diagram ~/.pi/agent/skills/`）
+- 变更：技能改为**全局可用**——源码移到 `tools/skills/svg-diagram/`（纳入 git，且不在技能发现路径，避免重名），
+  `scripts/install-skills.sh` 负责装到 `~/.pi/agent/skills/`；已安装并自检通过
 
 ## [2026-11-12] M2.2 | 计划页 chip 可点：原文锁点页 + 练习页
 

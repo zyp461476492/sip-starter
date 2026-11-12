@@ -91,4 +91,4 @@ updated: 2026-11-12
 | chip 变成虚线灰块 | 对应的 raw 原文或 drill 文件不存在——这是设计如此，不是 bug |
 | 图没显示出来 | md 里的路径相对 `wiki/`（`assets/x.svg`），文件实际在 `wiki/assets/` |
 | 页面样式被图里串改 | SVG 内的类名没加 `dg-` 前缀（内联后 `<style>` 是全局作用域）；构建会 warn |
-| 图排版变形/文字重叠 | 跑 `node .agents/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图看 |
+| 图排版变形/文字重叠 | 跑 `node ~/.pi/agent/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图看 |

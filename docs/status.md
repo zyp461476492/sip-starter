@@ -16,7 +16,7 @@ last_updated: 2026-11-12
   里程碑切法、验收物三分、反模式），并把方法内容从 `01-workflow` 移过去
 - 站点补强：`§x.y` chip 现在可点 → 原文锁点页 `raw/rfc3261.html`（316 个节锁点，已剔页眉页脚）；
   `drill:` chip → 练习页 `drills/<slug>.html`；未入库的 RFC 仍为虚线不可点
-- 图表能力：项目级技能 `.agents/skills/svg-diagram/`（手写内联 SVG + 自检脚本 + 截图回归），
+- 图表能力：**全局技能 `svg-diagram`**（源码在 `tools/skills/`，`scripts/install-skills.sh` 装到 `~/.pi/agent/skills/`；手写内联 SVG + 自检脚本 + 截图回归），
   已产出 `wiki/assets/ladder-basic-call.svg` 并内联进 `flows/basic-call`
 - 校验：`npm run check` → 0 错误（红链为待建页，已在 open-threads 记录）
 

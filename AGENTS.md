@@ -112,9 +112,12 @@
 
 ## 7. 图表
 
-说明图统一用 `.agents/skills/svg-diagram` 技能（手写内联 SVG，不用截图/ASCII）。
+说明图统一用**全局技能 `svg-diagram`**（手写内联 SVG，不用截图/ASCII）。
+
+- 技能源码在本仓 `tools/skills/svg-diagram/`（纳入版本管理），装到全局用 `scripts/install-skills.sh`
+- 全局位置：`~/.pi/agent/skills/svg-diagram/`；`tools/` **不是**技能发现目录，所以不会重名冲突
 
 1. SVG 源文件放 `wiki/assets/<slug>.svg`（素材，不入 dist）
 2. md 里写 `![图说明](assets/<slug>.svg)`，构建时会把文件内容内联进页面
 3. **类名必须带 `dg-` 前缀**（`.dg-th` / `.dg-arr` / `.dg-lane`），否则内联时会污染页面样式
-4. 交付前必须跑 `node .agents/skills/svg-diagram/scripts/svg-check.mjs <svg>`，并用 `render.mjs` 截图肉眼确认
+4. 交付前必须跑 `node ~/.pi/agent/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图肉眼确认
