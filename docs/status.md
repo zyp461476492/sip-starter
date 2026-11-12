@@ -10,7 +10,7 @@ last_updated: 2026-11-12
 - M1 最小闭环 ✅：目录、`AGENTS.md`、`docs/` 全套、rfc3261 入库、wiki 三页样板、
   vocab 5 条（含音标与三层发音回退）、站点三视图、`npm run check` 锚点校验
 - M2 ✅（结构部分）：`wiki/specs/rfc3261.md` 章节地图（28 节 → 读/查/跳 + 服务哪个里程碑）、
-  `plan.yaml` 改为 α–ε 里程碑组织（17 任务）、首批 3 个 drill、`docs/01-workflow.md` 写明读法
+  `plan.yaml` 改为里程碑组织：**Phase 0 认知地基 + α–ε（22 任务）**、首批 3 个 drill、`docs/01-workflow.md` 写明读法
 - M2 ✅（文档落地）：ADR-0005（学习方案的备选与否决）+ `docs/03-learning-method.md`（四分类法、
   里程碑切法、验收物三分、反模式），并把方法内容从 `01-workflow` 移过去
 - 站点补强：`§x.y` chip 现在可点 → 原文锁点页 `raw/rfc3261.html`（316 个节锁点，已剔页眉页脚）；
@@ -19,9 +19,11 @@ last_updated: 2026-11-12
 
 ## 下一步（有序）
 
-1. **α-1**：消息解析/序列化 round-trip，夹具用 §24.1 的 F1/F2 + §20.42 的两个 Via
-2. α-2 URI 解析与比较（§19.1、§19.1.4）
-3. α-3 framing（§7.5、§18）→ α-4 最小 UAS 应答 OPTIONS（§11.2，用 sipsak 验收）
+1. **Phase 0 认知地基**（p0-1 … p0-5，2–3 小时，不产代码）
+   通读 §1–§3+§5 → 精读 §6/§4 → 通读 §24 → 产出 `wiki/concepts/sip-mental-model.md`
+   + 五个"为什么"自测（`sip/labs/drills/mental-model.md`）
+2. **α-1** 消息 round-trip（Phase 0 之后再动手，夹具现在就绪）
+3. α-2 URI 解析与比较 → α-3 framing → α-4 最小 UAS 应答 OPTIONS（sipsak 验收）
 
 ## 阻塞 / 待你决定
 

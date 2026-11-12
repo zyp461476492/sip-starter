@@ -9,6 +9,56 @@ active_topic: sip
 updated: 2026-11-12
 
 phases:
+  - id: p0
+    title: Phase 0 · 认知地基（开工前置，不产代码）
+    goal: 知道 SIP 为什么长这样（边界与取舍），而不是只有“照 ABNF 抄代码”的能力
+    tasks:
+      - id: p0-1
+        title: 通读 §1–§3 + §5（定位、边界、术语、分层）
+        why: 这几节信息密度低但**边界价值高**；不读会把“为什么这么设计”当成怪癖
+        prereq: []
+        sources: ["RFC3261 §1", "RFC3261 §2", "RFC3261 §3", "RFC3261 §5"]
+        wiki: ["specs/rfc3261", "concepts/sip-mental-model"]
+        drills: ["mental-model"]
+        done_when: 能用一句话说出“SIP 做什么、明确不做什么”，并说出 §5 的分层里事务与对话谁在下
+        status: todo
+      - id: p0-2
+        title: 精读 §6 Definitions（Transaction / Dialog / Call 的边界）
+        why: 后面所有“这个状态该放哪层”的判断，都以这三个定为前提
+        prereq: [p0-1]
+        sources: ["RFC3261 §6"]
+        wiki: ["concepts/transaction", "concepts/sip-mental-model"]
+        drills: ["mental-model"]
+        done_when: 三条定义都能逐字引用，并说出各自作用域（一个请求-响应 / 一端到另一端 / 整通呼叫）
+        status: todo
+      - id: p0-3
+        title: 精读 §4 Overview of Operation（梯形拓扑）
+        why: 全篇最有效的十页；后面每个里程碑都在它的某一段里
+        prereq: [p0-1]
+        sources: ["RFC3261 §4"]
+        wiki: ["flows/basic-call", "concepts/sip-mental-model"]
+        drills: []
+        done_when: 不看图画梯形拓扑，并说出 UAC/UAS/代理/registrar 各自维护什么状态
+        status: todo
+      - id: p0-4
+        title: 通读 §24.1/§24.2 报文例子（兼做 α-1 夹具）
+        why: 报文实例是后面所有测试的基线，先把眼熟
+        prereq: [p0-3]
+        sources: ["RFC3261 §24.1", "RFC3261 §24.2"]
+        wiki: ["flows/basic-call"]
+        drills: ["msg-parse"]
+        done_when: 能指出 F1 里每个头域“为什么必须存在”，并认出 F2 相对 F1 新增/变化了哪些
+        status: todo
+      - id: p0-5
+        title: 产出 sip-mental-model 页 + 5 题自测
+        why: 不落成的“看过”等于没看；这页也是以后判断“该不该在 SIP 层做”的依据
+        prereq: [p0-2, p0-3, p0-4]
+        sources: ["RFC3261 §4", "RFC3261 §6"]
+        wiki: ["concepts/sip-mental-model"]
+        drills: ["mental-model"]
+        done_when: 五个“为什么”全部能带锁点作答（不许抄摘要），且该页 status 升 current
+        status: todo
+
   - id: alpha
     title: α 报文层 · 解析、序列化、UDP/TCP 收发
     goal: 能收发并正确切分真实软电话的报文，对 OPTIONS 给出合法应答

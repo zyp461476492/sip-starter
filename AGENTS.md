@@ -63,6 +63,8 @@
    - 追加 `docs/memory/journal.md` 一条（`## [YYYY-MM-DD] 里程碑 | 标题`）
    - 未完成项落 `docs/memory/open-threads.md`（必须带触发条件或关闭日期）
    - 新踩的坑落 `docs/memory/facts.md`（症状 → 结论 → 证据）
+9. **计划是假设，不是承诺**：任何 task 开工时若发现前提不成立（缺前置知识 / 判据写错 / 顺序错了），
+   **当场改 `plan.yaml` 并记 `open-threads.md`**，不许硬做完再补。改计划不是失败，掩盖假设才是。
 
 ---
 

@@ -10,6 +10,7 @@
 | 页面 | 一句话 | 状态 |
 |---|---|---|
 | [[concepts/transaction]] | 一次请求及其全部响应；ICT/IST/NICT/NIST 两套状态机 | current |
+| [[concepts/sip-mental-model]] | 边界与取舍：SIP 做什么、不做什么、五个“为什么” | draft |
 | concepts/dialog | 对话 = Call-ID + 两个 tag（待建） | — |
 
 ## messages/（消息与头域）

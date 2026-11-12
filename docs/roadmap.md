@@ -28,7 +28,8 @@
 | 产出 | 验收 |
 |---|---|
 | `wiki/specs/rfc3261.md` 章节地图（读/查/跳 + 服务里程碑） | 每节都有归属，且能指出"这节现在不读" |
-| `plan/plan.yaml` 改为 α–ε 里程碑组织，17 个任务 | 每个 task 的 `done_when` 可被工具验证 |
+| `plan/plan.yaml` 改为里程碑组织：Phase 0 认知地基 + α–ε，共 22 个任务 | 每个 task 的 `done_when` 可被工具验证 |
+| Phase 0：通读 §1–§6 + §24，产出 `sip-mental-model` 心智模型页与五题自测 | 五题能带锚点作答，页面升 current |
 | `sip/labs/drills/` 首批 3 个 drill | 判据可执行，无"理解了"这类词 |
 | `docs/01-workflow.md` 写明"读 spec 的时机" | 新会话不会再去通读 RFC |
 | α-1（消息 round-trip）跑通 | 字节级一致 |
