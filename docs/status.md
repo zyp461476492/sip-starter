@@ -11,6 +11,7 @@ M1（最小闭环）已完成：
 - 编译层：`wiki/` 三页样板（transaction / via / basic-call）+ `index.md` + `log.md`
 - 数据层：`vocab/terms.yaml` 5 条、`plan/plan.yaml` 2 项
 - 展示层：`npm run site` 生成三视图（计划 / 知识库 / 生词本）+ `search.json`
+- 生词本发音：音标（英美并列）+ 🔊 朗读（Web Speech API，可切 US/UK 与慢速；`audio` 字段可指向本地 mp3）
 - 校验：`npm run check` → **0 错误 / 2 红链**（`concepts/dialog` 待建，已记入 open-threads）
 - 落库：git 初始提交 `M1: 骨架 + rfc3261 入库 + wiki 三页样板 + 站点三视图`
 

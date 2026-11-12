@@ -117,13 +117,19 @@ h4 { margin: 0 0 .3em; font-size: .95rem; }
 .muted { color: var(--muted); }
 
 /* 生词本 */
-.toolbar { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.toolbar { display: flex; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+.tgroup { display: flex; gap: 6px; }
 .toolbar button { font: inherit; font-size: .86rem; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
 .toolbar button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
 .cardhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.card h3 { margin: 0; font-size: 1.05rem; }
+.card h3 { margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 6px; }
+.card .phon { margin: .25em 0 .1em; font-family: ui-monospace, Menlo, monospace; font-size: .82rem; color: var(--muted); letter-spacing: .01em; }
+.phon.inline { display: inline; margin: 0; font-size: .8rem; }
+button.speak { font-size: .8rem; line-height: 1; padding: 3px 7px; border-radius: 20px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); cursor: pointer; }
+button.speak:hover { color: var(--accent); border-color: var(--accent); }
+.qphon { font-family: ui-monospace, Menlo, monospace; color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
 .card .dom { margin: .5em 0 .7em; font-size: .9rem; }
 .card dl { margin: 0; font-size: .84rem; }
 .card dt { color: var(--muted); margin-top: .5em; font-size: .78rem; }

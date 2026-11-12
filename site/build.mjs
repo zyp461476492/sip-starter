@@ -185,10 +185,16 @@ ${phases}`;
 
 function renderVocab(terms, candidates, rel) {
   const data = JSON.stringify(terms);
+  const speakBtn = (t, extra = '') =>
+    `<button class="speak ${extra}" data-say="${esc(t.say || t.term)}"${t.audio ? ` data-audio="${rel}${esc(t.audio)}"` : ''} title="朗读">🔊</button>`;
   const cards = terms
     .map(
       (t) => `<article class="card" data-status="${esc(t.status)}" data-term="${esc(t.term)}">
-  <div class="cardhead"><h3>${esc(t.term)}</h3><span class="badge ${esc(t.status)}">${esc(t.status)}</span></div>
+  <div class="cardhead">
+    <h3>${esc(t.term)} ${speakBtn(t)}</h3>
+    <span class="badge ${esc(t.status)}">${esc(t.status)}</span>
+  </div>
+  ${t.phonetic ? `<p class="phon">${esc(t.phonetic)}</p>` : ''}
   <p class="dom">${esc(t.domain_meaning)}</p>
   <dl>
     ${t.general_meaning ? `<dt>通用义</dt><dd>${esc(t.general_meaning)}</dd>` : ''}
@@ -202,21 +208,29 @@ function renderVocab(terms, candidates, rel) {
 
   const cand = candidates.length
     ? `<details class="cand"><summary>候选池（${candidates.length} 条，待人工确认）</summary><ul>${candidates
-        .map((c) => `<li><b>${esc(c.term)}</b> — ${esc(c.domain_meaning || '')} <code>${esc(c.source || '')}</code></li>`)
+        .map((c) => `<li><b>${esc(c.term)}</b> ${c.phonetic ? `<span class="phon inline">${esc(c.phonetic)}</span> ` : ''}— ${esc(c.domain_meaning || '')} <code>${esc(c.source || '')}</code></li>`)
         .join('')}</ul></details>`
     : '';
 
   return `<h1>生词本 <small>熟词僻义才是坑</small></h1>
 <div class="toolbar">
-  <button data-filter="all" class="on">全部</button>
-  <button data-filter="learning">learning</button>
-  <button data-filter="known">known</button>
-  <button id="quiz">抽卡自查</button>
+  <span class="tgroup">
+    <button data-filter="all" class="on">全部</button>
+    <button data-filter="learning">learning</button>
+    <button data-filter="known">known</button>
+  </span>
+  <span class="tgroup">
+    <button data-accent="en-US" class="on">US</button>
+    <button data-accent="en-GB">UK</button>
+    <button data-rate="0.6">慢速</button>
+  </span>
+  <span class="tgroup"><button id="quiz">抽卡自查</button></span>
 </div>
 <div id="quizbox" class="quizbox" hidden>
   <div class="qterm"></div>
+  <div class="qphon"></div>
   <div class="qans" hidden></div>
-  <div class="qfoot"><button id="reveal">看答案</button><button id="next">下一个</button><span id="qleft"></span></div>
+  <div class="qfoot"><button id="qspeak">🔊 读一遍</button><button id="reveal">看答案</button><button id="next">下一个</button><span id="qleft"></span></div>
 </div>
 <section class="cards">${cards}</section>
 ${cand}
@@ -270,9 +284,10 @@ function main() {
   const VALID_VOCAB = new Set(['candidate', 'learning', 'known']);
   const VALID_TASK = new Set(['todo', 'doing', 'done']);
   terms.forEach((t, i) => {
-    for (const f of ['term', 'domain_meaning', 'confusion', 'source', 'status', 'topics']) {
+    for (const f of ['term', 'phonetic', 'domain_meaning', 'confusion', 'source', 'status', 'topics']) {
       if (!t[f]) errors.push(`vocab/terms.yaml[${i}] 缺字段 ${f}`);
     }
+    if (t.audio && !existsSync(join(ROOT, 'vocab', t.audio))) warn.push(`vocab(${t.term}) 的 audio 文件不存在：${t.audio}，将回退浏览器 TTS`);
     if (t.status && !VALID_VOCAB.has(t.status)) errors.push(`vocab 状态非法: ${t.status} (${t.term})`);
     for (const w of t.wiki || []) if (!pages.has(w)) errors.push(`vocab(${t.term}) 引用了不存在的 wiki 页: ${w}`);
   });
@@ -309,6 +324,14 @@ function main() {
   mkdirSync(join(DIST, 'assets'), { recursive: true });
   writeFileSync(join(DIST, 'assets/style.css'), read('site/assets/style.css'));
   writeFileSync(join(DIST, 'assets/app.js'), read('site/assets/app.js'));
+  // 本地发音文件（可选）：vocab/audio/* → dist/audio/*
+  const audioDir = join(ROOT, 'vocab/audio');
+  if (existsSync(audioDir)) {
+    mkdirSync(join(DIST, 'audio'), { recursive: true });
+    for (const f of readdirSync(audioDir)) {
+      writeFileSync(join(DIST, 'audio', f), readFileSync(join(audioDir, f)));
+    }
+  }
 
   // 1. 计划
   writePage('index.html', shell({ title: '学习计划', rel: '', active: 'plan', body: renderPlan(plan, pages, '') }));

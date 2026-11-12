@@ -3,6 +3,7 @@
 
 - term: fork
   pos: v
+  phonetic: "BrE /fɔːk/ · AmE /fɔːrk/"
   domain_meaning: 代理把同一请求发往多个目标位置（并行或顺序），由此可能产生多个对话
   general_meaning: 分叉、岔开（餐具/代码仓库的 fork）
   confusion: 以为是"复制一条呼叫"，其实是路由决策；forking 的后果是"一通呼叫多个对话"
@@ -14,6 +15,8 @@
 
 - term: provisional
   pos: adj
+  phonetic: "/prəˈvɪʒənl/"
+  say: pro vi sion al
   domain_meaning: 1xx 响应——服务器还在处理、尚未有最终结果；不可靠传输、永不会引发 ACK
   general_meaning: 临时的、暂定的
   confusion: 以为任何 provisional 都会停止请求重传。实际：INVITE 事务收到 1xx 后停止重传；非 INVITE 事务收到 1xx 后仍以 T2 间隔继续重传
@@ -25,6 +28,7 @@
 
 - term: canonical
   pos: adj
+  phonetic: "BrE /kəˈnɒnɪkl/ · AmE /kəˈnɑːnɪkl/"
   domain_meaning: 把 URI 转成可比较的规范形式，以便判断两个 SIP/SIPS URI 是否等价
   general_meaning: 经典的、权威的
   confusion: 以为是"官方的/标准的"；在 SIP 里它只关乎比较运算
@@ -36,6 +40,7 @@
 
 - term: glare
   pos: n
+  phonetic: "BrE /ɡleə(r)/ · AmE /ɡler/"
   domain_meaning: 同一对话内双方同时发请求造成的冲突（典型是 re-INVITE 撞车），用 491 处理
   general_meaning: 眩光、怒视
   confusion: 以为是"泛指冲突"；它特指同一对话内的请求并发，且有专门的解决流程（§14.2）
@@ -47,6 +52,7 @@
 
 - term: tag
   pos: n
+  phonetic: "/tæɡ/"
   domain_meaning: To/From 里的参数，提供对话标识的一半；对话 = Call-ID + 两个 tag；必须全局唯一且至少 32 位随机
   general_meaning: 标签
   confusion: 以为只是个任意的会话标记；实际上 From 与 To 的 tag 由两端各自生成，一个请求里只能有 From 的一半

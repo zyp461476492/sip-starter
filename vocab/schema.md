@@ -14,7 +14,9 @@
 |---|---|---|
 | `term` | ✅ | 词条原形（英文，小写；缩写保留大写如 `CSeq`） |
 | `pos` | | 词性：n / v / adj / abbr |
-| `phonetic` | | 音标（可选，只对真生词有用） |
+| `phonetic` | ✅ | 音标，英美并列时用 `BrE /fɔːk/ · AmE /fɔːrk/` 格式 |
+| `say` | | **朗读文本覆盖**。缩写/头域名（`CSeq`、`Via`、`SDP`）TTS 会读错，用它能读对 |
+| `audio` | | 本地音频，相对 `vocab/` 路径（如 `audio/fork.mp3`）。有则优先播它，否则走浏览器 TTS |
 | `domain_meaning` | ✅ | **在本协议语境里到底指什么**（一句中文，尽量对应英文原文用词） |
 | `general_meaning` | | 通用义，用来对照"熟词僻义" |
 | `confusion` | ✅ | 我当初的误解 / 最容易混的点 |
@@ -23,6 +25,16 @@
 | `status` | ✅ | `candidate` → `learning` → `known` |
 | `wiki` | | 相关页面 slug 列表，站点据此做双向跳转 |
 | `added` | ✅ | 日期 |
+
+## 发音怎么来
+
+优先顺序：
+
+1. `audio` 字段指向的本地文件（离线可用、音质确定，但要把 mp3 放进 `vocab/audio/`）
+2. 浏览器 Web Speech API（`speechSynthesis`）实时合成——**默认路线**，零文件、新词自动可用，
+   站点提供 en-US / en-GB 口音切换与 0.5×–1× 语速
+
+缩写类词条用 `say` 写出发音近似（如 `CSeq` → `say: C seek`），否则 TTS 会念成字母串。
 
 ## 状态机
 

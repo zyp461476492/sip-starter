@@ -24,6 +24,20 @@
 - 结论：引用原文时必须手工剔除页眉页脚；跨页的段落要拼接后再引用，不能把噪声一起抄进 wiki
 - 证据：`wiki/concepts/transaction.md` 的 §17 引用
 
+## 发音用 Web Speech API，不依赖外部服务（2026-11-12）
+
+- 症状：想给生词本加发音，但又不想依赖在线词典 API（隐私/离线/失效）
+- 结论：默认走 `speechSynthesis` 合成；`vocab/audio/*.mp3` 存在时优先播本地文件（`audio` 字段）。
+  两个坑：① 多数浏览器要求**用户手势**后才能发声，所以只能在按钮/抽卡点击里调，不能页面加载自动读；
+  ② `getVoices()` 首次可能返回空数组，必须监听 `voiceschanged` 重取
+- 证据：`site/assets/app.js` 的 `speak()` / `loadVoices()`；口音与语速存 `localStorage`（`sip.acc` / `sip.rate`）
+
+## TTS 会读错缩写（2026-11-12）
+
+- 症状：`CSeq`、`SDP` 这类缩写被念成字母串或被当普通单词乱读
+- 结论：词条加 `say` 字段覆盖朗读文本（如 `CSeq` → `say: C see cue`）；无 `say` 时才能回退 `term`
+- 证据：`vocab/schema.md` 的发音小节
+
 ## site/dist 不入库（2026-11-12）
 
 - 结论：`site/dist/` 与 `node_modules/` 已进 `.gitignore`；要发布再单独讨论部署方式
