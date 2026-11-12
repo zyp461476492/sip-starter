@@ -38,3 +38,11 @@
 - 变：**目标从“学 SIP”定格为“自研 SIP 栈 → FreeSWITCH-like 组件”**；计划组织从“按章节”改为“按可运行里程碑”；
   `media/` 从“学完再说”改为与 sip 并行（δ 里程碑需要 SDP/RTP）
 - 留：α-1 尚未开工 → `open-threads.md`
+
+## [2026-11-12] M2.1 | 把“设计过程”落地成 ADR + 方法篇
+
+- 做：`docs/adr/0005-learning-milestones-over-linear-reading.md`（列出 4 个被否决的备选 + 重估触发条件）；
+  `docs/03-learning-method.md`（四分类法/里程碑切法/验收物三分/反模式/迁移到 media）；
+  `01-workflow` 瘦身（方法移入 03，只留动作清单）；`docs/README` 加索引与“新增文档的判据”
+- 变：确立边界——**规用则在 docs，实例在 wiki**；讨论过程不留存，只留判断 + 依据
+- 留：无

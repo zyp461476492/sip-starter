@@ -20,13 +20,17 @@
 
 ## B. 一次学习（人的侧）
 
+**前提：本仓不写实现，只做 labs 验证件（ADR-0004）。方式与判据见 [`03-learning-method.md`](03-learning-method.md)。**
+
 | 步 | 动作 |
 |---|---|
+| 0 | 看 `wiki/specs/rfc3261.md` 的章节地图，确认本节服务哪个里程碑（α–ε） |
 | 1 | 从站点计划页挑一个 task，读它的 `sources`（RFC 节）与 `wiki` 页 |
-| 2 | 做 `drills`（抓包/报文推演/ABNF 校验），做不出来就是没学会 |
-| 3 | 把卡住的地方写成 `wiki/questions/<slug>.md`（问题 + 已查到的证据 + 未解） |
-| 4 | 解决后：结论 file back 进概念页，问题页只留结论链接与日期，状态改 `answered` |
-| 5 | 更新 `plan/plan.yaml` 该 task 的 `status`；确认生词晋升（candidates → terms） |
+| 2 | **实现前一刻**才读该节原文，边读边对着状态图/报文字段做笔记 |
+| 3 | 在 `sip/labs/drills/` 写一个 drill 并跑通（判据必须可执行） |
+| 4 | 把卡住的地方写成 `wiki/questions/<slug>.md`（问题 + 已查到的证据 + 未解） |
+| 5 | 解决后：结论 file back 进概念页，问题页只留结论链接与日期，状态改 `answered` |
+| 6 | 更新 `plan/plan.yaml` 该 task 的 `status`；确认生词晋升（candidates → terms） |
 
 ## C. 一次 lint（体检）
 
