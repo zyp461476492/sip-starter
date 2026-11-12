@@ -59,6 +59,16 @@
 - 结论：图标一律用内联 SVG（`currentColor` 上色）+ 文字标签；emoji 只能用于“丢了也不影响功能”的装饰
 - 证据：`site/build.mjs` 的 `SPK` 常量
 
+## git 身份是本仓 local config（2026-11-12）
+
+- 症状：本机（WSL）**没有 global git 身份**（`git config --global user.name` 为空），新仓库首提交会报 Author identity unknown
+- 结论：本仓用 local config 固定为 `zyp <13150337230@163.com>`；**不要去设 global**，
+  否则会污染用户其他仓库的身份
+- 仓库：默认分支 `main`，无 remote（远端待用户自建）
+- 副作用：M1–M2.1 的六个提交最初用临时身份 `zyp@local` 写成，已用 `git filter-branch --env-filter`
+  重写作者与提交者，所以短 hash 变了（当时无 remote，无影响）
+- 证据：`git config --local --list`；`git log --format='%an <%ae>'`
+
 ## site/dist 不入库（2026-11-12）
 
 - 结论：`site/dist/` 与 `node_modules/` 已进 `.gitignore`；要发布再单独讨论部署方式
