@@ -176,17 +176,19 @@ function renderPlan(plan, pages, rel) {
 ${
   next
     ? `<div class="next"><b>下一步</b> ${esc(next.title)} <span class="muted">（${esc(next.id)}）</span></div>`
-    : '<div class="next">全部完成 🎉</div>'
+    : '<div class="next">全部完成</div>'
 }
 ${phases}`;
 }
 
 /* ── 生词视图 ───────────────────────────────────────────── */
 
+const SPK = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13L7.2 14.5H4z" fill="currentColor"/><path d="M15.2 9a4.2 4.2 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M17.8 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
 function renderVocab(terms, candidates, rel) {
   const data = JSON.stringify(terms);
   const speakBtn = (t, extra = '') =>
-    `<button class="speak ${extra}" data-say="${esc(t.say || t.term)}"${t.audio ? ` data-audio="${rel}${esc(t.audio)}"` : ''} title="朗读">🔊</button>`;
+    `<button class="speak ${extra}" data-say="${esc(t.say || t.term)}"${t.audio ? ` data-audio="${rel}${esc(t.audio)}"` : ''} title="朗读 ${esc(t.term)}">${SPK}<span>读</span></button>`;
   const cards = terms
     .map(
       (t) => `<article class="card" data-status="${esc(t.status)}" data-term="${esc(t.term)}">
@@ -224,13 +226,15 @@ function renderVocab(terms, candidates, rel) {
     <button data-accent="en-GB">UK</button>
     <button data-rate="0.6">慢速</button>
   </span>
+  <span class="tgroup"><button data-online title="用有道词典音频发音（本机无 TTS 语音时的回退）">在线发音</button></span>
   <span class="tgroup"><button id="quiz">抽卡自查</button></span>
 </div>
+<div id="voicewarn" class="voicewarn" hidden></div>
 <div id="quizbox" class="quizbox" hidden>
   <div class="qterm"></div>
   <div class="qphon"></div>
   <div class="qans" hidden></div>
-  <div class="qfoot"><button id="qspeak">🔊 读一遍</button><button id="reveal">看答案</button><button id="next">下一个</button><span id="qleft"></span></div>
+  <div class="qfoot"><button id="qspeak">读一遍</button><button id="reveal">看答案</button><button id="next">下一个</button><span id="qleft"></span></div>
 </div>
 <section class="cards">${cards}</section>
 ${cand}

@@ -45,13 +45,20 @@ updated: 2026-11-12
 
 ## 生词本发音
 
-优先级：`audio` 字段的本地文件 → 浏览器 Web Speech API 合成。
+三层回退：**本地 `audio` 文件 → 在线词典音频（有道）→ 浏览器 TTS 合成**。
 
-- 工具栏可切 `US`/`UK` 口音与慢速（存 `localStorage`，全站生效）
-- 卡片上 🔊 读该词条；抽卡时自动读一遍（先听音再看义）
-- 缩写词务必写 `say`：`CSeq` 不写会被念成字母串
-- 要摆本地音频：把 mp3 放到 `vocab/audio/`，词条加 `audio: audio/fork.mp3`；
-  构建会拷到 `dist/audio/`，文件缺失时自动回退合成
+- 卡片上的「读」按钮、抽卡时自动念一遍
+- 工具栏：`US`/`UK` 口音、`慢速`、`在线发音` 开关（均存 `localStorage`）
+- **本机没有 TTS 语音时，页面顶部会出现提示条，并自动切到在线发音**
+- 缩写词务必写 `say`：`CSeq` 不写会念成字母串
+- 要摆本地音频：mp3 放到 `vocab/audio/`，词条加 `audio: audio/fork.mp3`；构建会拷到 `dist/audio/`
+
+### 没有声音怎么查
+
+1. 控制台跑 `speechSynthesis.getVoices().length`。**返回 0 就是系统没装语音**（WSL / 精简 Linux 很常见）
+2. 本地合成装包：`sudo apt install speech-dispatcher espeak-ng`，然后**重启浏览器**
+3. 不想装包：打开工具栏「在线发音」（需联网，只把单词发给有道）
+4. 仍未响：看控制台是否有 autoplay / 跨域错误；音频必须在用户点击后触发
 
 ## 构建失败排查
 
@@ -61,6 +68,6 @@ updated: 2026-11-12
 | 页面没出现 | 是否缺 `id` / `title` / `topics` frontmatter |
 | 计划页某项显示"未支撑" | 该 task 的 `wiki:` 列表里的 slug 是否都能解析 |
 | 词条不显示 | `vocab/terms.yaml` 里的 `status` 值是否在枚举内 |
-| 点了 🔊 没声音 | 浏览器要求用户手势（刷新后首次点击即可）；或系统未装该口音语音 → 看控制台 `speechSynthesis.getVoices()` |
+| 点了「读」没声音 | 控制台 `speechSynthesis.getVoices().length`：0 = 系统无语音 → 开「在线发音」或装 `speech-dispatcher` |
 | 某个词读得不对 | 给词条加 `say` 字段覆盖朗读文本 |
 | 端口占用 | `--serve` 换端口：`node site/build.mjs --serve 5174` |

@@ -2,25 +2,58 @@
 (() => {
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-  /* ── 发音（Web Speech API） ─────────────────────────────
-     优先级：data-audio 本地音频 > speechSynthesis 合成
-     口音与语速存 localStorage，全站生效                        */
+  /* ── 轻提示 ─────────────────────────────────────────── */
+  let toastTimer;
+  function toast(msg, ms = 4200) {
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.className = 'toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('on'), ms);
+  }
+
+  /* ── 发音：三层回退 ───────────────────────────────────
+     1. 词条的 audio 本地文件
+     2. 在线词典音频（有道 dictvoice，可开关）
+     3. 浏览器 speechSynthesis（需要系统语音包）
+     优先级可用 localStorage 覆盖：sip.online = 'on' | 'off' | 空(=自动)   */
   const speechOK = 'speechSynthesis' in window;
+  const ONLINE_KEY = 'sip.online';
+  const ONLINE_URL = (w) => `https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(w)}&type=2`;
   let accent = localStorage.getItem('sip.acc') || 'en-US';
   let rate = Number(localStorage.getItem('sip.rate') || 1);
+  let onlinePref = localStorage.getItem(ONLINE_KEY); // null = 自动
+  let online = false;
   let voices = [];
 
-  const loadVoices = () => {
-    if (speechOK) voices = window.speechSynthesis.getVoices();
+  const norm = (l) => String(l).replace('_', '-');
+  const refreshVoices = () => {
+    if (speechOK) voices = window.speechSynthesis.getVoices() || [];
+    return voices;
   };
-  if (speechOK) {
-    loadVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+
+  /** voices 是异步加载的：首次可能为空，最多等 1.5s */
+  async function ensureVoices() {
+    if (!speechOK) return [];
+    if (refreshVoices().length) return voices;
+    return await new Promise((res) => {
+      const t0 = Date.now();
+      const tick = () => {
+        if (refreshVoices().length || Date.now() - t0 > 1500) return res(voices);
+        setTimeout(tick, 120);
+      };
+      tick();
+    });
   }
 
   const pickVoice = () => {
-    if (!voices.length) loadVoices();
-    const norm = (l) => l.replace('_', '-');
+    if (!voices.length) refreshVoices();
     return (
       voices.find((v) => norm(v.lang) === accent && /natural|google|samantha|daniel|zira/i.test(v.name)) ||
       voices.find((v) => norm(v.lang) === accent) ||
@@ -29,28 +62,80 @@
     );
   };
 
-  function speak(text, audioUrl) {
-    if (audioUrl) {
-      const a = new Audio(audioUrl);
-      a.play().catch(() => speak(text, null)); // 文件缺失时回退合成
+  /** 播一个音频 URL，成功返回 true */
+  function playAudio(url) {
+    return new Promise((res) => {
+      if (!url) return res(false);
+      const a = new Audio(url);
+      let settled = false;
+      const done = (ok) => {
+        if (settled) return;
+        settled = true;
+        res(ok);
+      };
+      a.addEventListener('playing', () => done(true), { once: true });
+      a.addEventListener('error', () => done(false), { once: true });
+      setTimeout(() => done(false), 2500);
+      a.play().catch(() => done(false));
+    });
+  }
+
+  async function speak(text, audioUrl) {
+    // 1) 本地音频
+    if (audioUrl && (await playAudio(audioUrl))) return;
+    // 2) 在线音频
+    if (online && (await playAudio(ONLINE_URL(text)))) return;
+    // 3) 本地 TTS
+    const vs = await ensureVoices();
+    if (!speechOK || !vs.length) {
+      toast(
+        online
+          ? `「${text}」发音失败：在线音频不可达，且本机没有 TTS 语音。详见 docs/02-site.md`
+          : `本机没有可用 TTS 语音（voices=0），已可在工具栏打开「在线发音」`
+      );
       return;
     }
-    if (!speechOK) return;
     const u = new SpeechSynthesisUtterance(text);
     u.lang = accent;
     u.rate = rate;
     const v = pickVoice();
     if (v) u.voice = v;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+    try {
+      window.speechSynthesis.cancel();
+      setTimeout(() => window.speechSynthesis.speak(u), 60); // cancel 后立刻 speak 在 Chrome 上会被吞
+    } catch {
+      toast('语音合成调用失败');
+    }
   }
 
-  // 卡片上的 🔊
+  /* 初始化：决定是否启用在线发音 */
+  (async () => {
+    const vs = await ensureVoices();
+    const noTTS = !speechOK || !vs.length;
+    online = onlinePref === 'on' ? true : onlinePref === 'off' ? false : noTTS;
+    syncOnlineBtn();
+    if (online && noTTS) {
+      const warn = document.getElementById('voicewarn');
+      if (warn) {
+        warn.hidden = false;
+        warn.innerHTML =
+          '本机浏览器没有可用语音（<code>voices=0</code>），已自动切到<b>在线发音</b>（有道词典音频，只发送单词本身）。' +
+          '想在本地合成：Debian/Ubuntu 装 <code>speech-dispatcher</code> + <code>espeak-ng</code> 后重启浏览器。';
+      }
+    }
+  })();
+
+  function syncOnlineBtn() {
+    const b = document.querySelector('.toolbar button[data-online]');
+    if (!b) return;
+    b.classList.toggle('on', online);
+    b.textContent = online ? '在线发音 · 开' : '在线发音 · 关';
+  }
+
+  // 卡片上的朗读按钮
   document.querySelectorAll('.speak').forEach((btn) =>
     btn.addEventListener('click', () => speak(btn.dataset.say, btn.dataset.audio))
   );
-  // 浏览器不支持合成时隐藏按钮，避免点了没反应
-  if (!speechOK) document.querySelectorAll('.speak').forEach((b) => (b.hidden = true));
 
   /* ── 搜索 ───────────────────────────────────────────── */
   const q = document.getElementById('q');
@@ -95,7 +180,7 @@
     })
   );
 
-  /* ── 口音 / 语速 ────────────────────────────────────── */
+  /* ── 口音 / 语速 / 在线发音 ─────────────────────────── */
   const accents = [...document.querySelectorAll('.toolbar button[data-accent]')];
   accents.forEach((b) => {
     b.classList.toggle('on', b.dataset.accent === accent);
@@ -106,6 +191,7 @@
       speak('session initiation protocol');
     });
   });
+
   const rateBtn = document.querySelector('.toolbar button[data-rate]');
   if (rateBtn) {
     const slow = Number(rateBtn.dataset.rate);
@@ -123,6 +209,17 @@
     });
   }
 
+  const onlineBtn = document.querySelector('.toolbar button[data-online]');
+  if (onlineBtn) {
+    onlineBtn.addEventListener('click', () => {
+      online = !online;
+      localStorage.setItem(ONLINE_KEY, online ? 'on' : 'off');
+      syncOnlineBtn();
+      toast(online ? '已启用在线发音（有道）' : '已关闭在线发音，只用本地 TTS');
+      if (online) speak('fork');
+    });
+  }
+
   /* ── 抽卡 ───────────────────────────────────────────── */
   const box = document.getElementById('quizbox');
   const btnQuiz = document.getElementById('quiz');
@@ -133,10 +230,11 @@
     const qans = box.querySelector('.qans');
     const qleft = document.getElementById('qleft');
     let cur = null;
+    const say = (t) => speak(t.say || t.term, t.audio);
 
     const pick = () => {
       if (!pool.length) {
-        qterm.textContent = '一轮结束 🎉';
+        qterm.textContent = '一轮结束';
         qphon.textContent = '';
         qans.hidden = true;
         qleft.textContent = '';
@@ -152,7 +250,7 @@
         `易错点：${esc(cur.confusion)}<br><span class="muted">${esc(cur.source)}</span>`;
       qans.hidden = true;
       qleft.textContent = `剩余 ${pool.length + 1}`;
-      speak(cur.say || cur.term, cur.audio); // 抽到就念一遍：先听音再想义
+      say(cur); // 抽到先念一遍：先听音再想义
     };
 
     btnQuiz.addEventListener('click', () => {
@@ -163,7 +261,7 @@
         pick();
       }
     });
-    document.getElementById('qspeak').addEventListener('click', () => cur && speak(cur.say || cur.term, cur.audio));
+    document.getElementById('qspeak').addEventListener('click', () => cur && say(cur));
     document.getElementById('reveal').addEventListener('click', () => (qans.hidden = false));
     document.getElementById('next').addEventListener('click', pick);
   }

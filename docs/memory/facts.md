@@ -38,6 +38,27 @@
 - 结论：词条加 `say` 字段覆盖朗读文本（如 `CSeq` → `say: C see cue`）；无 `say` 时才能回退 `term`
 - 证据：`vocab/schema.md` 的发音小节
 
+## WSL2 下 Chrome 没有 TTS 语音（2026-11-12）
+
+- 症状：生词本点朗读完全无反应（不报错）
+- 结论：WSL2 里没装 `speech-dispatcher` / `espeak`，Chrome 的 `speechSynthesis.getVoices()` **返回空数组**，
+  `speak()` 静默失败。修法：`sudo apt install speech-dispatcher espeak-ng` 后重启浏览器；
+  或走站点内置的在线发音（有道 `dictvoice`）
+- 证据：本机 `dpkg -l | grep -i speech-dispatcher` 无输出；`site/assets/app.js` 的 `ensureVoices()`
+
+## 有道 dictvoice 可用作在线发音回退（2026-11-12）
+
+- 结论：`GET https://dict.youdao.com/dictvoice?audio=<word>&type=2` 返回 mp3（实测 200 / 10029 字节 / audio/mpeg），
+  无需 key，`<audio>` 直接播（不需要 CORS）
+- 代价：联网 + 把单词发给第三方，所以做成**可开关**，且只在检测到本机无语音时自动开
+- 证据：`curl -o /tmp/fork.mp3` 测试；`site/assets/app.js` 的 `ONLINE_URL`
+
+## 不要用 emoji 做按钮图标（2026-11-12）
+
+- 症状：生词本的 `🔊` 按钮在某些 Linux/浏览器上完全不显示（缺 emoji 字体，不是样式问题）
+- 结论：图标一律用内联 SVG（`currentColor` 上色）+ 文字标签；emoji 只能用于“丢了也不影响功能”的装饰
+- 证据：`site/build.mjs` 的 `SPK` 常量
+
 ## site/dist 不入库（2026-11-12）
 
 - 结论：`site/dist/` 与 `node_modules/` 已进 `.gitignore`；要发布再单独讨论部署方式

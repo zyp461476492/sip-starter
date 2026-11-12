@@ -28,13 +28,14 @@
 
 ## 发音怎么来
 
-优先顺序：
+三层回退（站点实现，见 `site/assets/app.js`）：
 
-1. `audio` 字段指向的本地文件（离线可用、音质确定，但要把 mp3 放进 `vocab/audio/`）
-2. 浏览器 Web Speech API（`speechSynthesis`）实时合成——**默认路线**，零文件、新词自动可用，
-   站点提供 en-US / en-GB 口音切换与 0.5×–1× 语速
+1. `audio` 字段指向的本地文件（离线、音质确定）
+2. **在线词典音频**（有道 `dictvoice`，只发送单词本身）——工具栏可开关，默认在检测到本机无语音时自动打开
+3. 浏览器 Web Speech API（`speechSynthesis`）——需要系统装语音包，Linux 上要 `speech-dispatcher`
 
-缩写类词条用 `say` 写出发音近似（如 `CSeq` → `say: C seek`），否则 TTS 会念成字母串。
+缩写类词条用 `say` 写出发音近似（如 `CSeq` → `say: C see cue`），否则 TTS 会念成字母串。
+`say` **不参与在线音频**：有道拿的是 `say` 的文本，所以 `say` 只该写真正要读的东西。
 
 ## 状态机
 
