@@ -24,7 +24,7 @@ phases:
         drills: []
         est: 40min
         done_when: 不看图画梯形拓扑，并说出 UAC/UAS/代理/registrar 各自维护什么状态
-        status: todo
+        status: doing
       - id: l0-2
         title: 把 F1 REGISTER / F2 200 OK 逐头标注
         why: 后面所有测试都用这两个报文当基线，先把每个头"为什么存在"弄清

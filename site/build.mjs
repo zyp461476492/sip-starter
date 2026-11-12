@@ -53,7 +53,7 @@ function parseFrontmatter(raw) {
 /* ── 读取 wiki ──────────────────────────────────────────── */
 
 const WIKI = join(ROOT, 'wiki');
-const SPECIAL = new Set(['index.md', 'log.md']);
+const SPECIAL = new Set(['index.md', 'log.md', 'README.md']);
 
 /* ── 证据锚点 / 练习 的链接化 ───────────────────────────
    sources:"RFC3261 §7.1" → 原文锚点页；drills → 练习页          */
