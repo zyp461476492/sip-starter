@@ -1,0 +1,19 @@
+{
+  "name": "sip-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "学习 SIP 及其他媒体协议的编译型知识库 + 静态站点",
+  "scripts": {
+    "site": "node site/build.mjs",
+    "dev": "node site/build.mjs --serve",
+    "check": "node site/build.mjs --check"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0",
+    "marked": "^15.0.7"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

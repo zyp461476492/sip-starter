@@ -1,0 +1,13 @@
+# LLM 抽取的候选生词（待人工确认晋升到 terms.yaml）。
+# ingest 时由 agent 追加；人工确认后搬进 terms.yaml，或在此标记丢弃原因。
+
+- term: sibling
+  pos: n
+  domain_meaning: 由同一请求 fork 出的多个分支响应之间的关系（"兄弟"响应）
+  general_meaning: 兄弟姐妹
+  confusion: 以为指代"同级代理"
+  source: "RFC3261 (§17.1.1.2 未核对)"
+  topics: [sip]
+  status: candidate
+  noted: 这条 source 未核对，属占位示例——升格前必须回原文 grep 出真实锚点
+  added: 2026-11-12

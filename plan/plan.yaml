@@ -1,0 +1,34 @@
+# 学习计划：站点唯一数据源。字段说明见同目录 README.md。
+# 纪律：`wiki:` / `drills:` 里只写能解析的 slug，站点据此判定"已支撑/未支撑"。
+
+active_topic: sip
+updated: 2026-11-12
+
+phases:
+  - id: p1
+    title: 第 1 阶段 · 消息与语法
+    goal: 能徒手写出一个合法 SIP 请求，并解释每个头域为什么必须存在
+    tasks:
+      - id: p1-t1
+        title: SIP 消息结构与头域格式
+        why: 后面所有排障都从"这条报文明不合法"开始
+        prereq: []
+        sources: ["RFC3261 §7", "RFC3261 §25"]
+        wiki: ["messages/headers/via"]
+        drills: []
+        done_when: 不查文档写出一个带 Via/Max-Forwards/To/From/Call-ID/CSeq/Contact 的 INVITE，并逐头说明作用
+        status: doing
+
+  - id: p2
+    title: 第 2 阶段 · 事务层
+    goal: 能画出 ICT/IST/NICT/NIST 状态机，并解释每个定时器存在的理由
+    tasks:
+      - id: p2-t1
+        title: 事务的定义与四种组合
+        why: 事务是 SIP 里"重传与去重"的全部机制所在，也是抓包分析的第一分层
+        prereq: [p1-t1]
+        sources: ["RFC3261 §17", "RFC3261 §17.1.1.1", "RFC3261 §17.1.2.1"]
+        wiki: ["concepts/transaction"]
+        drills: []
+        done_when: 不看笔记说清"为什么 2xx 之后的 ACK 不属于 INVITE 事务"，并说出它对排障的影响
+        status: done
