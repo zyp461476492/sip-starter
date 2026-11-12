@@ -298,7 +298,9 @@ ${cand}
 /* ── wiki 视图 ──────────────────────────────────────────── */
 
 function renderWikiPage(page, pages, terms, rel) {
-  const html = renderMd(page.body, { pages, rel });
+  // 正文若以 # 标题开头，去掉（页面模板已渲染 title，避免两个 h1）
+  const body = page.body.replace(/^\s*#\s+.*\n/, '');
+  const html = renderMd(body, { pages, rel });
   const relVocab = terms.filter((t) => (t.wiki || []).includes(page.slug));
   const back = page.backlinks.length
     ? `<ul>${page.backlinks.map((b) => `<li><a class="wl" href="${rel}wiki/${b}.html">${esc(pages.get(b).data.title)}</a></li>`).join('')}</ul>`

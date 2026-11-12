@@ -70,6 +70,16 @@
 - 变：**通读 §1–§6 从"最前"移到 L2**（有现象之后再读），L0 只留 §4 + §24
 - 留：L0-1 尚未开工
 
+## [2026-11-12] M2.5 | 图表能力：svg-diagram 技能 + 首个 SIP 时序图
+
+- 触发：希望 agent 生成说明时能配图（类似 WorkBuddy 的架构图），并提炼成可复用技能
+- 做：项目级技能 `.agents/skills/svg-diagram/`（SKILL.md 硬规则 + references/tokens.md 调色板几何 +
+  references/archetypes.md 五类骨架 + scripts/svg-check.mjs 机械校验 + scripts/render.mjs 截图 +
+  assets/skeleton.svg）；产出 `wiki/assets/ladder-basic-call.svg` 并内联进 `wiki/flows/basic-call`
+- 关键：**脚本查"错"（几何/文字溢出/类未定义/marker），截图查"难看"**——模型能自己看图，闭环才成立
+- 变：构建支持 `![说明](assets/x.svg)` 内联；`AGENTS.md` 加 §7 图表规则（`dg-` 前缀等）
+- 留：全局安装需切权限（`cp -r .agents/skills/svg-diagram ~/.pi/agent/skills/`）
+
 ## [2026-11-12] M2.2 | 计划页 chip 可点：原文锁点页 + 练习页
 
 - 做：`site/build.mjs` 新增 `rfcSections()`（按节切分、剔页眉页脚、生成 `#sec-x.y` 锁点）与
