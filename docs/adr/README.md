@@ -12,6 +12,14 @@
 | [0004](0004-impl-lives-elsewhere.md) | 本仓不写实现，只放 labs 最小验证件 | current |
 | [0005](0005-learning-milestones-over-linear-reading.md) | 学习按可运行里程碑推进，分层读 spec | current |
 
+## 写法约定
+
+- 一个决定一个文件，文件名 `NNNN-kebab-slug.md`，编号递增不回收
+- 必须写**被否决的备选**及其理由（否则 ADR 就只是个电报）
+- 必须写**重新考虑的触发条件**（否则它永远是 current）
+- 禁止用"不是 X，而是 Y"这种对比——容易被读成"X 不必要"。
+  写成"X 是前提，但**验收物**不是 X"，把手段与验收标准分开。
+
 ## 模板
 
 ```markdown
