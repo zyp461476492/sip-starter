@@ -14,6 +14,7 @@ import { join, dirname, relative, resolve } from 'node:path';
 import { createServer } from 'node:http';
 import { marked } from 'marked';
 import yaml from 'js-yaml';
+import { lookup, computeMissing } from '../scripts/vocab-lookup.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const DIST = join(ROOT, 'site', 'dist');
@@ -262,13 +263,61 @@ function renderVocab(terms, candidates, rel) {
     )
     .join('');
 
-  const cand = candidates.length
-    ? `<details class="cand"><summary>候选池（${candidates.length} 条，待人工确认）</summary><ul>${candidates
-        .map((c) => `<li><b>${esc(c.term)}</b> ${c.phonetic ? `<span class="phon inline">${esc(c.phonetic)}</span> ` : ''}— ${esc(c.domain_meaning || '')} <code>${esc(c.source || '')}</code></li>`)
-        .join('')}</ul></details>`
+  const candCard = (c) => {
+    const miss = Array.isArray(c.missing) ? c.missing : computeMissing(c);
+    return `<article class="card cand-card" data-status="${esc(c.status || 'candidate')}" data-term="${esc(c.term)}">
+  <div class="cardhead"><h3>${esc(c.term)}</h3><span class="badge ${esc(c.status || 'candidate')}">${esc(c.status || 'candidate')}</span></div>
+  ${c.phonetic ? `<p class="phon">${esc(c.phonetic)}</p>` : ''}
+  ${c.general_meaning ? `<p class="dom muted">${esc(c.general_meaning)}</p>` : ''}
+  ${c.domain_meaning ? `<p class="dom">${esc(c.domain_meaning)}</p>` : ''}
+  ${c.confusion ? `<p class="dom muted">易错：${esc(c.confusion)}</p>` : ''}
+  ${c.source ? `<p class="muted"><code>${esc(c.source)}</code></p>` : ''}
+  <div class="chips">${miss.length ? miss.map((m) => `<span class="chip gap">缺 ${esc(m)}</span>`).join('') : '<span class="chip ok">语义齐全，可晋升</span>'}${c.drafted_by ? `<span class="chip">drafted_by: ${esc(c.drafted_by)}</span>` : ''}</div>
+</article>`;
+  };
+  const pendingFix = candidates.filter((c) => (Array.isArray(c.missing) ? c.missing.length : computeMissing(c).length) > 0).length;
+  const draftedN = candidates.filter((c) => c.status === 'drafted').length;
+  const candSection = candidates.length
+    ? `<h2>候选池 <small>${candidates.length} 条 · 待补全 ${pendingFix} · 待复核 ${draftedN}</small></h2>` +
+      [['drafted', '待复核（AI 已起草，需人确认）'], ['candidate', '待补全 / 待晋升']]
+        .map(([st, label]) => {
+          const list = candidates.filter((c) => (c.status || 'candidate') === st);
+          if (!list.length) return '';
+          return `<h3 class="cand-h">${label} · ${list.length}</h3><section class="cards">${list.map(candCard).join('')}</section>`;
+        })
+        .join('')
     : '';
 
+  const addPanel = `<section class="addpanel" id="addpanel">
+  <div class="aphead"><b>录词</b> <span class="muted" id="apmode">检查本地接口…</span></div>
+  <div class="aprow">
+    <input id="apword" placeholder="输入英文单词，回车查询" autocomplete="off">
+    <button id="aplookup">查询</button>
+    <label class="apl"><input type="checkbox" id="apoffline"> 离线 CMUdict</label>
+    <label class="apl"><input type="checkbox" id="apaudio" checked> 下载真人发音</label>
+  </div>
+  <div id="apresult" class="apresult" hidden>
+    <div class="apmech">
+      <div><span class="apk">音标</span> <code id="apphon"></code> <button id="apspeak" class="speak">${SPK}<span>读</span></button></div>
+      <div><span class="apk">通用义</span> <span id="apgen"></span></div>
+      <div><span class="apk">来源</span> <span id="apsrc"></span></div>
+    </div>
+    <div class="apsem">
+      <label>领域义（SIP 语境）<input id="apdom" placeholder="词典给不了，可留空"></label>
+      <label>易错点<input id="apconf" placeholder="你当初的误解，可留空"></label>
+      <label>出处<input id="apspec" placeholder="如 RFC3261 §21.4.27，可留空"></label>
+    </div>
+    <div class="apfoot">
+      <button id="apsave">存为候选</button>
+      <span class="muted" id="aphint">留空的语义项会被记入 <code>missing</code>，之后可批量交给 AI 补全</span>
+    </div>
+  </div>
+  <div id="apnote" class="apnote"></div>
+</section>
+`;
+
   return `<h1>生词本 <small>熟词僻义才是坑</small></h1>
+${addPanel}
 <div class="toolbar">
   <span class="tgroup">
     <button data-filter="all" class="on">全部</button>
@@ -291,7 +340,7 @@ function renderVocab(terms, candidates, rel) {
   <div class="qfoot"><button id="qspeak">读一遍</button><button id="reveal">看答案</button><button id="next">下一个</button><span id="qleft"></span></div>
 </div>
 <section class="cards">${cards}</section>
-${cand}
+${candSection}
 <script>window.__VOCAB__=${data};</script>`;
 }
 
@@ -429,12 +478,29 @@ function main() {
   /* 校验 */
   const VALID_VOCAB = new Set(['candidate', 'learning', 'known']);
   const VALID_TASK = new Set(['todo', 'doing', 'done']);
+  // 候选池：机械信息（音标）必须有；missing 必须与实际一致；drafted 必须带 drafted_by
+  const VALID_CAND = new Set(['candidate', 'drafted']);
+  candidates.forEach((c, i) => {
+    if (!c.term) return errors.push(`vocab/candidates.yaml[${i}] 缺 term`);
+    if (!String(c.phonetic || '').trim()) errors.push(`candidates(${c.term}) 缺 phonetic —— 机械信息拿不到就别入池`);
+    if (c.status && !VALID_CAND.has(c.status)) errors.push(`candidates(${c.term}) status 非法：${c.status}（只允许 candidate/drafted）`);
+    const miss = computeMissing(c);
+    const declared = Array.isArray(c.missing) ? c.missing : null;
+    if (!declared || declared.join(',') !== miss.join(',')) {
+      errors.push(`candidates(${c.term}) 的 missing 与实际不一致，应为 [${miss.join(', ')}]`);
+    }
+    if (c.status === 'drafted' && !c.drafted_by) errors.push(`candidates(${c.term}) status=drafted 但缺 drafted_by`);
+  });
+
   terms.forEach((t, i) => {
     for (const f of ['term', 'phonetic', 'domain_meaning', 'confusion', 'source', 'status', 'topics']) {
       if (!t[f]) errors.push(`vocab/terms.yaml[${i}] 缺字段 ${f}`);
     }
     if (t.audio && !existsSync(join(ROOT, 'vocab', t.audio))) warn.push(`vocab(${t.term}) 的 audio 文件不存在：${t.audio}，将回退浏览器 TTS`);
     if (t.status && !VALID_VOCAB.has(t.status)) errors.push(`vocab 状态非法: ${t.status} (${t.term})`);
+    if (t.status && !['learning', 'known'].includes(t.status)) errors.push(`terms(${t.term}) 只允许 learning/known —— candidate/drafted 应留在候选池`);
+    if (t.drafted_by) errors.push(`terms(${t.term}) 不允许 drafted_by —— 正式本必须由人确认`);
+    if (Array.isArray(t.missing) && t.missing.length) errors.push(`terms(${t.term}) 有未补全项 missing=[${t.missing.join(', ')}]`);
     for (const w of t.wiki || []) if (!pages.has(w)) errors.push(`vocab(${t.term}) 引用了不存在的 wiki 页: ${w}`);
   });
   for (const phase of plan.phases) {
@@ -523,19 +589,127 @@ function main() {
 
 /* ── 本地服务 ───────────────────────────────────────────── */
 
-function serve() {
-  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json' };
-  createServer((req, res) => {
-    let p = decodeURIComponent(req.url.split('?')[0]);
-    if (p.endsWith('/')) p += 'index.html';
-    const file = join(DIST, p);
-    if (!file.startsWith(DIST) || !existsSync(file)) {
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-      return res.end('404');
+/* ── 本地写接口（仅 dev 模式） ───────────────────────────────
+   只做两件事：代查生词、把候选写进 vocab/candidates.yaml。
+   安全边界：只写 vocab/ 下两个 yaml；请求体 ≤64KB；来源限本机/私有网段。 */
+
+const YAML_HEADER =
+  '# LLM 抽取与「录词」表单写入的候选生词（待人工/agent 补全与复核）。\n# 字段与状态机见 schema.md；missing 由脚本重算，勿手改。\n\n';
+
+const isLocalAddr = (ip = '') => {
+  const a = ip.replace(/^::ffff:/, '');
+  return a === '127.0.0.1' || a === '::1' || /^10\./.test(a) || /^192\.168\./.test(a) || /^172\.(1[6-9]|2\d|3[01])\./.test(a);
+};
+
+function readBody(req, limit) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > limit) {
+        reject(new Error('请求体过大'));
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+}
+
+async function downloadAudio(term, url, accent) {
+  if (!url) return null;
+  const safe = term.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const ext = (url.match(/\.(mp3|ogg|wav)$/i) || [, 'mp3'])[1].toLowerCase();
+  const file = `${safe}${accent ? '-' + accent.toLowerCase() : ''}.${ext}`;
+  const dir = join(ROOT, 'vocab', 'audio');
+  mkdirSync(dir, { recursive: true });
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) return null;
+    writeFileSync(join(dir, file), Buffer.from(await res.arrayBuffer()));
+    return file;
+  } catch {
+    return null;
+  }
+}
+
+async function saveCandidate(d) {
+  const term = String(d.term || '').trim();
+  if (!term) throw new Error('缺少 term');
+  const candPath = join(ROOT, 'vocab', 'candidates.yaml');
+  const termsPath = join(ROOT, 'vocab', 'terms.yaml');
+  const existing = existsSync(candPath) ? yaml.load(readFileSync(candPath, 'utf8')) || [] : [];
+  const official = yaml.load(readFileSync(termsPath, 'utf8')) || [];
+  const dup = [...existing, ...official].find((x) => String(x.term || '').toLowerCase() === term.toLowerCase());
+  if (dup) throw new Error(`"${term}" 已存在（候选池或正式本），未重复写入`);
+
+  const entry = { term, pos: d.pos || '', phonetic: d.phonetic || '' };
+  if (d.downloadAudio && d.audioUrl) {
+    let file = await downloadAudio(term, d.audioUrl, d.audioAccent);
+    if (!file && /-uk\./i.test(d.audioUrl)) file = await downloadAudio(term, d.audioUrl.replace('-uk.', '-us.'), 'AmE');
+    if (!file && /-us\./i.test(d.audioUrl)) file = await downloadAudio(term, d.audioUrl.replace('-us.', '-uk.'), 'BrE');
+    if (file) {
+      entry.audio = `audio/${file}`;
+      entry.audio_source = 'dictionaryapi.dev / Wikimedia Commons (BY-SA 4.0)';
     }
-    res.writeHead(200, { 'content-type': types[file.slice(file.lastIndexOf('.'))] || 'application/octet-stream' });
-    res.end(readFileSync(file));
-  }).listen(PORT, () => console.log(`\n  http://localhost:${PORT}\n`));
+  }
+  Object.assign(entry, {
+    general_meaning: d.general_meaning || '',
+    domain_meaning: d.domain_meaning || '',
+    confusion: d.confusion || '',
+    source: d.source || '',
+    topics: ['sip'],
+    status: 'candidate',
+    added: new Date().toISOString().slice(0, 10),
+  });
+  if (d.lookup) entry.lookup = d.lookup;
+  entry.missing = computeMissing(entry);
+
+  existing.push(entry);
+  writeFileSync(candPath, YAML_HEADER + yaml.dump(existing, { lineWidth: 200 }));
+  return { ok: true, entry };
+}
+
+function serve() {
+  const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.mp3': 'audio/mpeg' };
+  const json = (res, obj, code = 200) => {
+    res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(obj));
+  };
+
+  createServer(async (req, res) => {
+    const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+    try {
+      if (url.pathname === '/api/ping') return json(res, { ok: true, write: isLocalAddr(req.socket.remoteAddress) });
+      if (url.pathname === '/api/vocab/lookup') {
+        const word = (url.searchParams.get('word') || '').trim();
+        const mode = url.searchParams.get('mode') === 'offline' ? 'offline' : 'online';
+        if (!word) return json(res, { ok: false, error: '缺少 word' }, 400);
+        return json(res, { ok: true, result: await lookup(word, { mode }) });
+      }
+      if (url.pathname === '/api/vocab/candidate') {
+        if (req.method !== 'POST') return json(res, { ok: false, error: '只接受 POST' }, 405);
+        if (!isLocalAddr(req.socket.remoteAddress)) return json(res, { ok: false, error: '只允许本机/私有网段写入' }, 403);
+        const body = await readBody(req, 64 * 1024);
+        return json(res, await saveCandidate(JSON.parse(body || '{}')));
+      }
+
+      let p = decodeURIComponent(url.pathname);
+      if (p.endsWith('/')) p += 'index.html';
+      const file = join(DIST, p);
+      if (!file.startsWith(DIST) || !existsSync(file)) {
+        res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+        return res.end('404');
+      }
+      res.writeHead(200, { 'content-type': types[file.slice(file.lastIndexOf('.'))] || 'application/octet-stream' });
+      res.end(readFileSync(file));
+    } catch (e) {
+      return json(res, { ok: false, error: e.message }, 500);
+    }
+  }).listen(PORT, () => console.log(`\n  http://localhost:${PORT}\n  （dev 模式：可写入 vocab/candidates.yaml）\n`));
 }
 
 main();

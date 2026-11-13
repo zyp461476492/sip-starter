@@ -167,3 +167,25 @@ main.wide, body:has(.rawlayout) main { max-width: 1180px; }
 pre.rfctext { border: 0; background: none; padding: 0; font-size: .78rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; color: var(--fg); }
 .chip.src.gap { border-style: dashed; }
 @media (max-width: 900px) { .rawlayout { grid-template-columns: 1fr; } .rawtoc { position: static; max-height: 220px; border-right: 0; border-bottom: 1px solid var(--line); } }
+
+/* 录词面板 */
+.addpanel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; }
+.aphead { display: flex; gap: 10px; align-items: baseline; margin-bottom: 10px; }
+.aphead .muted { font-size: .8rem; }
+.aprow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.aprow input[type="text"], .aprow input:not([type]) { flex: 1 1 220px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; font-size: .92rem; }
+.aprow button, .apfoot button { font: inherit; font-size: .88rem; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.aprow button:disabled, .apfoot button:disabled { opacity: .5; cursor: not-allowed; }
+.apl { font-size: .82rem; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+.apresult { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+.apmech { font-size: .88rem; display: grid; gap: 6px; }
+.apk { display: inline-block; min-width: 46px; color: var(--muted); font-size: .8rem; }
+.apsem { display: grid; gap: 8px; margin: 12px 0; }
+.apsem label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.apsem input { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; font-size: .9rem; }
+.apfoot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.apfoot .muted { font-size: .78rem; }
+.apnote { margin-top: 8px; font-size: .82rem; color: var(--warn); }
+.badge.drafted { background: color-mix(in srgb, var(--accent) 55%, transparent); color: #fff; }
+.cand-h { font-size: .95rem; margin: 1.6em 0 .6em; }
+.cand-card { border-style: dashed; }

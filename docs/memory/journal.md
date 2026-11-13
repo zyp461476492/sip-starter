@@ -98,3 +98,16 @@
 - 决定：**recipe 里的命令允许是草案，但第一次跑完必须把实测结果写回**（否则它就是"看上去对的文档"）
 - 实测：本机三件套都没装；docker 29.7.2 可用；sudo 需密码 → 镜像路线成立
 - 留：镜像尚未构建（用户要求先完善方案）
+
+## [2026-11-13] M3.0 | 生词录入：表单 + 缺口标记 + 批量补全闭环
+
+- 触发：希望页面里输入单词自动记录音标与发音；机器拿不到的信息要能标记、之后交 agent 批量补全
+- 做：`scripts/vocab-lookup.mjs`（在线 dictionaryapi + 离线 CMUdict + ARPAbet→IPA）；
+  dev 服务加三个接口（`/api/ping`、`/api/vocab/lookup`、`POST /api/vocab/candidate`，含 mp3 下载）；
+  生词本页加「录词」面板（dev 可写、静态只查）；候选池按「待补全 / 待复核」分组；
+  新字段 `missing`/`drafted_by`/`lookup`/`audio_source`；四级状态机；`check` 加四条硬校验；
+  `AGENTS.md` 新增「批量补全候选词」动作
+- 实测：`glare` 在线 → `BrE /ɡlɛə/ · AmE /ɡlɛəɹ/` + uk.mp3 可用；`provisional` 离线 → `/prəvˈɪʒənəl/`；
+  POST 重复词被拒（glare 已在正式本）；`retransmission` 走完整链路 candidate → drafted（missing=[]）
+- 边界：写接口只在本机/私有网段、只写 vocab 两个 yaml、≤64KB；AI 永远不许写 terms.yaml
+- 留：`retransmission` 处于 drafted（等你复核）；`baresip/pjsua` 包名待验

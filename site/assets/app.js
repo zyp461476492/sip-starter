@@ -265,4 +265,127 @@
     document.getElementById('reveal').addEventListener('click', () => (qans.hidden = false));
     document.getElementById('next').addEventListener('click', pick);
   }
+
+  /* ── 录词面板（dev 模式可写；静态模式只能查） ─────────── */
+  const ap = document.getElementById('addpanel');
+  if (ap) {
+    const el = (id) => document.getElementById(id);
+    const state = { api: false, canWrite: false, result: null, photo: '' };
+
+    fetch(new URL('api/ping', document.baseURI))
+      .then((r) => r.json())
+      .then((d) => {
+        state.api = !!d.ok;
+        state.canWrite = !!d.write;
+        el('apmode').textContent = state.api
+          ? state.canWrite ? 'dev 模式 · 可写入候选池' : 'dev 模式 · 只读（来源非本机）'
+          : '静态模式 · 只能查词，不能写入（npm run dev 后才可写）';
+        if (!state.api || !state.canWrite) el('apsave').disabled = true;
+      })
+      .catch(() => {
+        el('apmode').textContent = '静态模式 · 只能查词，不能写入（npm run dev 后才可写）';
+        el('apsave').disabled = true;
+      });
+
+    /** 静态模式的兜底查询：浏览器直连 dictionaryapi（该站允许跨域） */
+    async function lookupClient(word) {
+      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+      if (!res.ok) throw new Error(`词典查不到 "${word}"`);
+      const data = await res.json();
+      const entry = data[0] || {};
+      const texts = (entry.phonetics || []).map((p) => p.text).filter(Boolean);
+      const audio = (entry.phonetics || []).find((p) => p.audio);
+      const meaning = (entry.meanings || [])[0] || {};
+      return {
+        term: word,
+        phonetic: texts.slice(0, 2).join(' · ') || entry.phonetic || '',
+        pos: meaning.partOfSpeech || '',
+        generalMeaning: ((meaning.definitions || [])[0] || {}).definition || '',
+        audioUrl: audio ? audio.audio : '',
+        audioAccent: audio && /-uk\./i.test(audio.audio) ? 'BrE' : 'AmE',
+        lookup: { source: 'dictionaryapi', at: new Date().toISOString().slice(0, 10) },
+      };
+    }
+
+    function renderResult(r) {
+      state.result = r;
+      el('apphon').textContent = r.phonetic || '（无）';
+      el('apgen').textContent = r.generalMeaning || '—';
+      el('apsrc').textContent = `${r.lookup ? r.lookup.source : '?'} · ${r.pos || '未知词性'}${r.note ? ' · ' + r.note : ''}`;
+      const sb = el('apspeak');
+      sb.dataset.say = r.term;
+      if (r.audioUrl) sb.dataset.audio = r.audioUrl;
+      el('apresult').hidden = false;
+      el('apnote').textContent = '';
+    }
+
+    async function doLookup() {
+      const word = el('apword').value.trim();
+      if (!word) return;
+      el('aplookup').disabled = true;
+      el('apnote').textContent = '查询中…';
+      try {
+        let r;
+        if (state.api) {
+          const mode = el('apoffline').checked ? 'offline' : 'online';
+          const d = await (await fetch(new URL(`api/vocab/lookup?word=${encodeURIComponent(word)}&mode=${mode}`, document.baseURI))).json();
+          if (!d.ok) throw new Error(d.error);
+          r = d.result;
+        } else {
+          r = await lookupClient(word);
+        }
+        renderResult(r);
+      } catch (e) {
+        el('apnote').textContent = '✗ ' + e.message;
+        el('apresult').hidden = true;
+      } finally {
+        el('aplookup').disabled = false;
+      }
+    }
+
+    el('aplookup').addEventListener('click', doLookup);
+    el('apword').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLookup();
+    });
+    el('apspeak').addEventListener('click', () => {
+      const r = state.result;
+      if (r) speak(r.term, r.audioUrl || null);
+    });
+
+    el('apsave').addEventListener('click', async () => {
+      const r = state.result;
+      if (!r) return;
+      el('apsave').disabled = true;
+      el('apnote').textContent = '写入中…';
+      try {
+        const payload = {
+          term: r.term,
+          pos: r.pos,
+          phonetic: r.phonetic,
+          phoneticsRaw: r.phonetic,
+          general_meaning: r.generalMeaning,
+          domain_meaning: el('apdom').value.trim(),
+          confusion: el('apconf').value.trim(),
+          source: el('apspec').value.trim(),
+          downloadAudio: el('apaudio').checked,
+          audioUrl: r.audioUrl,
+          audioAccent: r.audioAccent,
+          lookup: r.lookup,
+        };
+        const d = await (await fetch(new URL('api/vocab/candidate', document.baseURI), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        })).json();
+        if (!d.ok) throw new Error(d.error);
+        const miss = d.entry.missing || [];
+        toast(`已写入候选池：${d.entry.term}${miss.length ? `（缺 ${miss.join(', ')}）` : '（语义齐全）'}`, 6000);
+        setTimeout(() => location.reload(), 1200);
+      } catch (e) {
+        el('apnote').textContent = '✗ ' + e.message;
+        el('apsave').disabled = false;
+      }
+    });
+  }
+
 })();

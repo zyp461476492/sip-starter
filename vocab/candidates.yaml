@@ -1,13 +1,20 @@
-# LLM 抽取的候选生词（待人工确认晋升到 terms.yaml）。
-# ingest 时由 agent 追加；人工确认后搬进 terms.yaml，或在此标记丢弃原因。
+# LLM 抽取与「录词」表单写入的候选生词（待人工/agent 补全与复核）。
+# 字段与状态机见 schema.md；missing 由脚本重算，勿手改。
+# 纪律：drafted 只能由 agent 写；进 terms.yaml 必须由人确认。
 
-- term: sibling
-  pos: n
-  domain_meaning: 由同一请求 fork 出的多个分支响应之间的关系（"兄弟"响应）
-  general_meaning: 兄弟姐妹
-  confusion: 以为指代"同级代理"
-  source: "RFC3261 (§17.1.1.2 未核对)"
-  topics: [sip]
-  status: candidate
-  noted: 这条 source 未核对，属占位示例——升格前必须回原文 grep 出真实锚点
-  added: 2026-11-12
+- term: retransmission
+  pos: noun
+  phonetic: /ˌriːtrænzˈmɪʃən/
+  general_meaning: The act of sending again.
+  domain_meaning: UDP 下由事务层负责的重发：客户端事务按 T1 起倍增重发请求（非 INVITE 封顶 T2），服务端事务在收到重传时重发上一次的响应；可靠传输（TCP/TLS）不重发请求
+  confusion: 以为重传是 UDP/传输层的事；实际是事务层的职责，且 2xx 响应由 UAS 端到端重传、由 ACK 抑制，与事务层的请求重传是两套机制
+  source: RFC3261 §17.1.1.1
+  topics:
+    - sip
+  status: drafted
+  added: '2026-11-13'
+  lookup:
+    source: dictionaryapi
+    at: '2026-11-13'
+  missing: []
+  drafted_by: agent

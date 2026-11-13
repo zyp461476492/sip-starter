@@ -75,6 +75,20 @@ updated: 2026-11-12
 3. 不想装包：打开工具栏「在线发音」（需联网，只把单词发给有道）
 4. 仍未响：看控制台是否有 autoplay / 跨域错误；音频必须在用户点击后触发
 
+## 生词录入（dev 模式专有）
+
+`npm run dev` 启动的本地服务暴露三个只在本机可用的接口：
+
+| 端点 | 作用 | 边界 |
+|---|---|---|
+| `GET /api/ping` | 面板探测：`{ok, write}` | 只读 |
+| `GET /api/vocab/lookup?word=x&mode=online\|offline` | 服务端代查（避开 CORS）：dictionaryapi → 失败自动回退 CMUdict | 只读 |
+| `POST /api/vocab/candidate` | 写 `vocab/candidates.yaml`（含可选下载 mp3 到 `vocab/audio/`） | 仅 POST、≤64KB、来源限本机/私有网段、路径白名单 |
+
+- **静态打开**（`file://` 或纯静态托管）：表单仍可查词（浏览器直连 dictionaryapi），但**不能写入**
+- CMUdict 首次使用会下载到 `vocab/data/`（已 gitignore），之后完全离线
+- 写入后 `missing` 自动算出；缺项后续可交 agent 批量补全（见 `vocab/schema.md` 状态机）
+
 ## 构建失败排查
 
 | 现象 | 先查 |
@@ -91,4 +105,8 @@ updated: 2026-11-12
 | chip 变成虚线灰块 | 对应的 raw 原文或 drill 文件不存在——这是设计如此，不是 bug |
 | 图没显示出来 | md 里的路径相对 `wiki/`（`assets/x.svg`），文件实际在 `wiki/assets/` |
 | 页面样式被图里串改 | SVG 内的类名没加 `dg-` 前缀（内联后 `<style>` 是全局作用域）；构建会 warn |
+| 录词面板显示"静态模式" | 没跑 `npm run dev`；静态托管无写接口 |
+| 保存报 "已存在" | 该词已在候选池或正式本（防重复，正常行为） |
+| 查词一直"查询中…" | 在线词典被墙/超时 → 勾「离线 CMUdict」；首次会下载约 3.6MB |
+| 音标是自动转换的 | `lookup.source: cmudict`，ARPAbet→IPA 近似转换，与词典标注可能有差异 |
 | 图排版变形/文字重叠 | 跑 `node ~/.pi/agent/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图看 |

@@ -18,6 +18,8 @@ last_updated: 2026-11-12
   `drill:` chip → 练习页 `drills/<slug>.html`；未入库的 RFC 仍为虚线不可点
 - 图表能力：**全局技能 `svg-diagram`**（源码在 `tools/skills/`，`scripts/install-skills.sh` 装到 `~/.pi/agent/skills/`；手写内联 SVG + 自检脚本 + 截图回归），
   已产出 `wiki/assets/ladder-basic-call.svg` 并内联进 `flows/basic-call`
+- 生词录入：**录词表单（dev 模式可写）**——`npm run dev` → 生词本页顶部面板，输入单词自动查
+  英/美音标 + 真人 mp3 + 通用义；语义三项可留空，自动记入 `missing`；候选池按「待补全 / 待复核」分组
 - 校验：`npm run check` → 0 错误（红链为待建页，已在 open-threads 记录）
 
 ## 下一步（有序）

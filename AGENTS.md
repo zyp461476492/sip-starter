@@ -88,6 +88,17 @@
 2. 答案必须能追溯到 `sip/raw/` 的原文；核不到就标 `未核对`
 3. 结论 file back 进 wiki，并在 `wiki/log.md` 记 `query` 条目
 
+### 批量补全候选词（vocab fix）
+
+触发语：「批量补全候选词」「把缺 source 的词补上」
+
+1. 读 `vocab/candidates.yaml`，筛 `missing` 非空的条目
+2. 逐词在 `sip/raw/` 里 grep，找到**真正定义它**的章节（不是随便一处出现）
+3. 填 `domain_meaning`（一句中文，贴着原文措辞）与 `confusion` 草案；原文看不出易错点时留空
+4. 写回：`status: drafted`、`drafted_by: agent`，**重算 `missing`**（用 `scripts/vocab-lookup.mjs` 的 `computeMissing`）
+5. 追加 `wiki/log.md` 一条，说明改了哪几条、哪几条没敢动
+6. 禁止写 `vocab/terms.yaml`——晋升必须由人做
+
 ### Lint（体检）
 
 1. 锚点存在性：wiki 里每个 `§x.y` 都能在对应 raw 文件里 grep 到
