@@ -465,6 +465,58 @@ function writePage(relPath, html) {
 
 const relFrom = (relPath) => '../'.repeat(relPath.split('/').length - 1);
 
+function buildSite({ plan, terms, candidates, pages }) {
+  /* 构建 */
+  if (existsSync(DIST)) rmSync(DIST, { recursive: true });
+  mkdirSync(join(DIST, 'assets'), { recursive: true });
+  writeFileSync(join(DIST, 'assets/style.css'), read('site/assets/style.css'));
+  writeFileSync(join(DIST, 'assets/app.js'), read('site/assets/app.js'));
+  // 本地发音文件（可选）：vocab/audio/* → dist/audio/*
+  const audioDir = join(ROOT, 'vocab/audio');
+  if (existsSync(audioDir)) {
+    mkdirSync(join(DIST, 'audio'), { recursive: true });
+    for (const f of readdirSync(audioDir)) {
+      writeFileSync(join(DIST, 'audio', f), readFileSync(join(audioDir, f)));
+    }
+  }
+
+  // 1. 计划
+  writePage('index.html', shell({ title: '学习计划', rel: '', active: 'plan', body: renderPlan(plan, pages, '') }));
+
+  // 2. wiki
+  writePage('wiki/index.html', shell({ title: '知识库', rel: '../', active: 'wiki', body: renderMd(read('wiki/index.md'), { pages, rel: '../' }) }));
+  for (const page of pages.values()) {
+    const rel = relFrom(`wiki/${page.slug}.html`);
+    writePage(`wiki/${page.slug}.html`, shell({ title: page.data.title, rel, active: 'wiki', body: renderWikiPage(page, pages, terms, rel) }));
+  }
+  // wiki 构建日志也出一页（便于回溯，不进索引）
+  writePage('wiki/log.html', shell({ title: '构建日志', rel: '../', active: 'wiki', body: renderMd(read('wiki/log.md'), { pages, rel: '../' }) }));
+
+  // 3. 生词
+  writePage('vocab.html', shell({ title: '生词本', rel: '', active: 'vocab', body: renderVocab(terms, candidates, '') }));
+
+  // 4. RFC 原文锁点页
+  writePage('raw/rfc3261.html', shell({ title: 'RFC 3261 原文', rel: '../', active: 'raw', body: renderRawPage('../') }));
+
+  // 5. 练习页
+  for (const d of DRILLS.values()) {
+    const rel = relFrom(`drills/${d.slug}.html`);
+    writePage(`drills/${d.slug}.html`, shell({ title: `drill: ${d.slug}`, rel, active: '', body: renderDrillPage(d, pages, rel) }));
+  }
+
+  // 4. 搜索索引
+  const index = [
+    { path: 'index.html', title: '学习计划', text: plan.phases.map((p) => p.title + ' ' + (p.tasks || []).map((t) => t.title + ' ' + t.why + ' ' + t.done_when).join(' ')).join(' ') },
+    ...[...pages.values()].map((p) => ({ path: `wiki/${p.slug}.html`, title: p.data.title, text: p.body.replace(/[#>*`\[\]]/g, ' ') })),
+    { path: 'vocab.html', title: '生词本', text: terms.map((t) => `${t.term} ${t.domain_meaning} ${t.confusion}`).join(' ') },
+    ...[...DRILLS.values()].map((d) => ({ path: `drills/${d.slug}.html`, title: `drill: ${d.slug}`, text: d.body.replace(/[#>*`\[\]]/g, ' ') })),
+    { path: 'raw/rfc3261.html', title: 'RFC 3261 原文', text: 'RFC 3261 SIP Session Initiation Protocol 原文全文' },
+  ];
+  writeFileSync(join(DIST, 'search.json'), JSON.stringify(index));
+
+  return index.length;
+}
+
 /* ── 主流程 ─────────────────────────────────────────────── */
 
 function main() {
@@ -533,56 +585,10 @@ function main() {
     process.exit(errors.length ? 1 : 0);
   }
 
-  /* 构建 */
-  if (existsSync(DIST)) rmSync(DIST, { recursive: true });
-  mkdirSync(join(DIST, 'assets'), { recursive: true });
-  writeFileSync(join(DIST, 'assets/style.css'), read('site/assets/style.css'));
-  writeFileSync(join(DIST, 'assets/app.js'), read('site/assets/app.js'));
-  // 本地发音文件（可选）：vocab/audio/* → dist/audio/*
-  const audioDir = join(ROOT, 'vocab/audio');
-  if (existsSync(audioDir)) {
-    mkdirSync(join(DIST, 'audio'), { recursive: true });
-    for (const f of readdirSync(audioDir)) {
-      writeFileSync(join(DIST, 'audio', f), readFileSync(join(audioDir, f)));
-    }
-  }
-
-  // 1. 计划
-  writePage('index.html', shell({ title: '学习计划', rel: '', active: 'plan', body: renderPlan(plan, pages, '') }));
-
-  // 2. wiki
-  writePage('wiki/index.html', shell({ title: '知识库', rel: '../', active: 'wiki', body: renderMd(read('wiki/index.md'), { pages, rel: '../' }) }));
-  for (const page of pages.values()) {
-    const rel = relFrom(`wiki/${page.slug}.html`);
-    writePage(`wiki/${page.slug}.html`, shell({ title: page.data.title, rel, active: 'wiki', body: renderWikiPage(page, pages, terms, rel) }));
-  }
-  // wiki 构建日志也出一页（便于回溯，不进索引）
-  writePage('wiki/log.html', shell({ title: '构建日志', rel: '../', active: 'wiki', body: renderMd(read('wiki/log.md'), { pages, rel: '../' }) }));
-
-  // 3. 生词
-  writePage('vocab.html', shell({ title: '生词本', rel: '', active: 'vocab', body: renderVocab(terms, candidates, '') }));
-
-  // 4. RFC 原文锁点页
-  writePage('raw/rfc3261.html', shell({ title: 'RFC 3261 原文', rel: '../', active: 'raw', body: renderRawPage('../') }));
-
-  // 5. 练习页
-  for (const d of DRILLS.values()) {
-    const rel = relFrom(`drills/${d.slug}.html`);
-    writePage(`drills/${d.slug}.html`, shell({ title: `drill: ${d.slug}`, rel, active: '', body: renderDrillPage(d, pages, rel) }));
-  }
-
-  // 4. 搜索索引
-  const index = [
-    { path: 'index.html', title: '学习计划', text: plan.phases.map((p) => p.title + ' ' + (p.tasks || []).map((t) => t.title + ' ' + t.why + ' ' + t.done_when).join(' ')).join(' ') },
-    ...[...pages.values()].map((p) => ({ path: `wiki/${p.slug}.html`, title: p.data.title, text: p.body.replace(/[#>*`\[\]]/g, ' ') })),
-    { path: 'vocab.html', title: '生词本', text: terms.map((t) => `${t.term} ${t.domain_meaning} ${t.confusion}`).join(' ') },
-    ...[...DRILLS.values()].map((d) => ({ path: `drills/${d.slug}.html`, title: `drill: ${d.slug}`, text: d.body.replace(/[#>*`\[\]]/g, ' ') })),
-    { path: 'raw/rfc3261.html', title: 'RFC 3261 原文', text: 'RFC 3261 SIP Session Initiation Protocol 原文全文' },
-  ];
-  writeFileSync(join(DIST, 'search.json'), JSON.stringify(index));
+  const indexCount = buildSite({ plan, terms, candidates, pages });
 
   report();
-  console.log(`→ site/dist/  (${index.length} 条索引)`);
+  console.log(`→ site/dist/  (${indexCount} 条索引)`);
 
   if (MODE === '--serve') serve();
 }
@@ -646,7 +652,10 @@ async function saveCandidate(d) {
   const dup = [...existing, ...official].find((x) => String(x.term || '').toLowerCase() === term.toLowerCase());
   if (dup) throw new Error(`"${term}" 已存在（候选池或正式本），未重复写入`);
 
-  const entry = { term, pos: d.pos || '', phonetic: d.phonetic || '' };
+  if (!String(d.phonetic || '').trim()) {
+    throw new Error('查不到音标：先点「查询」确认拼写（或用离线 CMUdict）；缩写/专名可手工填音标后再存');
+  }
+  const entry = { term, pos: d.pos || '', phonetic: d.phonetic };
   if (d.downloadAudio && d.audioUrl) {
     let file = await downloadAudio(term, d.audioUrl, d.audioAccent);
     if (!file && /-uk\./i.test(d.audioUrl)) file = await downloadAudio(term, d.audioUrl.replace('-uk.', '-us.'), 'AmE');
@@ -673,6 +682,17 @@ async function saveCandidate(d) {
   return { ok: true, entry };
 }
 
+function rebuild() {
+  const plan = yaml.load(read('plan/plan.yaml'));
+  const terms = yaml.load(read('vocab/terms.yaml')) || [];
+  const candidates = yaml.load(read('vocab/candidates.yaml')) || [];
+  const pages = collectWiki();
+  H = new Set(getRfc().secs.map((x) => x.num));
+  for (const [k, v] of collectDrills()) DRILLS.set(k, v);
+  buildSite({ plan, terms, candidates, pages });
+  console.log(`  ↻ 已重建 dist（${terms.length} 正式词 / ${candidates.length} 候选）`);
+}
+
 function serve() {
   const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.mp3': 'audio/mpeg' };
   const json = (res, obj, code = 200) => {
@@ -694,7 +714,9 @@ function serve() {
         if (req.method !== 'POST') return json(res, { ok: false, error: '只接受 POST' }, 405);
         if (!isLocalAddr(req.socket.remoteAddress)) return json(res, { ok: false, error: '只允许本机/私有网段写入' }, 403);
         const body = await readBody(req, 64 * 1024);
-        return json(res, await saveCandidate(JSON.parse(body || '{}')));
+        const r = await saveCandidate(JSON.parse(body || '{}'));
+        rebuild(); // 关键：dist 是生成物，写完必须重建，否则页面看到的是旧的
+        return json(res, r);
       }
 
       let p = decodeURIComponent(url.pathname);

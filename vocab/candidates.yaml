@@ -18,3 +18,21 @@
     at: '2026-11-13'
   missing: []
   drafted_by: agent
+- term: Standards
+  pos: noun
+  phonetic: BrE /ˈstændədz/ · AmE /ˈstændɚdz/
+  general_meaning: A principle or example or measure used for comparison.
+  domain_meaning: ''
+  confusion: ''
+  source: ''
+  topics:
+    - sip
+  status: candidate
+  added: '2026-11-13'
+  lookup:
+    source: dictionaryapi
+    at: '2026-11-13'
+  missing:
+    - domain_meaning
+    - confusion
+    - source

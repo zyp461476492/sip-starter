@@ -69,6 +69,13 @@
   重写作者与提交者，所以短 hash 变了（当时无 remote，无影响）
 - 证据：`git config --local --list`；`git log --format='%an <%ae>'`
 
+## dev 服务不会自动重建 dist（2026-11-13）
+
+- 症状：录词表单提示"已写入候选池"，刷新页面看不到新词
+- 结论：`dist/` 是**生成物**，dev 服务只做静态文件服务；写入 yaml 后必须重建
+  → 已在 `POST /api/vocab/candidate` 里调用 `rebuild()`，日志会打 `↻ 已重建 dist（N 正式词 / M 候选）`
+- 证据：`site/build.mjs` 的 `rebuild()`；本次事故即由它缺失引起
+
 ## site/dist 不入库（2026-11-12）
 
 - 结论：`site/dist/` 与 `node_modules/` 已进 `.gitignore`；要发布再单独讨论部署方式

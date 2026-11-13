@@ -111,3 +111,11 @@
   POST 重复词被拒（glare 已在正式本）；`retransmission` 走完整链路 candidate → drafted（missing=[]）
 - 边界：写接口只在本机/私有网段、只写 vocab 两个 yaml、≤64KB；AI 永远不许写 terms.yaml
 - 留：`retransmission` 处于 drafted（等你复核）；`baresip/pjsua` 包名待验
+
+## [2026-11-13] M3.1 | 修：录词成功但页面看不到
+
+- 症状：用户录 `Standards` 提示成功，刷新生词本页不显示
+- 根因：`dist/` 是生成物，dev 服务只服务静态文件，**写入 yaml 后没有重建**
+- 修：抽出 `buildSite()`，`POST /api/vocab/candidate` 成功后立即 `rebuild()`；日志打 "↻ 已重建 dist"
+- 附带：`phonetic` 为空时拒绝写入（否则 check 必报错，用户会以为"存成功了却报错"）
+- 验证：POST `forking` → 响应 ok + 日志重建 + `dist/vocab.html` 立即能查到（测试条目已删）
