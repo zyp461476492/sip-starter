@@ -124,6 +124,26 @@ updated: 2026-11-12
 - CMUdict 首次使用会下载到 `vocab/data/`（已 gitignore），之后完全离线
 - 写入后 `missing` 自动算出；缺项后续可交 agent 批量补全（见 `vocab/schema.md` 状态机）
 
+## 字体与排版
+
+不引框架，但照抄成熟文档站的排版结论（VitePress 官方主题 / VuePress 默认主题）：
+
+| 用途 | 字体 | 说明 |
+|---|---|---|
+| 正文 + UI | **Inter**（自托管，latin 变量字重，48 KB） | 不加载时 Linux 上拉丁字符落到 DejaVu Sans、中文落到 Noto Sans CJK，两套字形混排，字重/x-height/基线都不齐 |
+| 中文 | **系统 CJK 栈**：`PingFang SC` → `HarmonyOS Sans SC` → `MiSans` → `Source Han Sans SC` → `Noto Sans CJK SC` → `Microsoft YaHei` | 中文 webfont 即使子集化也 1–3 MB，主流中文文档站都不加载 |
+| 代码 / RFC 原文 | **JetBrains Mono**（自托管，21 KB） | RFC 的 72 列文本与 ABNF 靠等宽，DejaVu Sans Mono 在小字号下偏糊 |
+
+字体文件在 `site/assets/fonts/`（含 OFL 许可与 `SOURCE.md` 记录来源/版本/更新命令），构建时整体拷到
+`dist/assets/fonts/`；`<head>` 里 `preload` Inter，`font-display: swap`。
+
+字号阶梯（贴 VuePress/VitePress 的文档感）：
+
+- 正文 `--read-size`（默认 16px）/ 行高 1.7；段落 `margin: 1em 0`
+- `h1` 2em / 650 / 字距 -0.022em；`h2` 1.5em / 600 / 上边距 2.2em + 下边框；`h3` 1.2em / 600
+- wiki 页 `h1` 的下划线已去掉（框架默认主题都没有），标题行只用字重与间距区隔
+- 所有拉丁文都有 `letter-spacing: -.011em`（Inter 在小字号下更紧），中文不受影响（负字距对 CJK 几乎不可见）
+
 ## 部署（GitHub Pages）
 
 仓库 public → Pages 免费。`site/dist/` **不入库**，由 `.github/workflows/pages.yml` 每次 push 到 `main`

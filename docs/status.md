@@ -25,6 +25,8 @@ last_updated: 2026-11-16
 - **M4.4 原文页宽度可调 ✅**：正文默认满宽（`--raw-w`），`Aa` 面板第三行「原文」= 满 / 宽 / 中；页头收在 900px
 - **M4.5 GitHub Pages ✅**：`.github/workflows/pages.yml`（check → site → artifact → deploy），`dist` 不入库；
   地址 **https://zyp461476492.github.io/sip-starter/**（已出站：Pages 的 Source = GitHub Actions）
+- **M4.6 字体排版 ✅**：自托管 Inter（48KB）+ JetBrains Mono（21KB），中文走系统 CJK 栈；
+  字号阶梯 h1 2em / h2 1.5em / h3 1.2em；去掉 wiki h1 绿下划线
 - 校验：`npm run check` → 0 错误（2 条红链 `concepts/dialog` 已知）；`npm run zh:check` → 0 错误 0 提醒
 
 ## 下一步（有序）

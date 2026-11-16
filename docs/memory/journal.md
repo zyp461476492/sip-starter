@@ -185,3 +185,16 @@
 - 结果：`https://zyp461476492.github.io/sip-starter/` 200；`raw/rfc3261.html` 717KB / `assets/style.css` / `search.json` /
   `drills/*` / `vocab.html` 全部 200；本地与线上渲染一致
 - 结论：**先启用 Pages，再 push** 能省一次失败构建；顺序反了只需重跑一次 workflow，不影响产物
+
+## [2026-11-16] M4.6 | 字体与排版向 VitePress/VuePress 靠
+
+- 症状：自写外壳的字"不好看"，对比 icyfenix.cn 觉得不齐、不够文档感
+- 根因：字体栈里全是 macOS/Windows 专有字体（`-apple-system`/`PingFang SC`/`Microsoft YaHei`），
+  Linux 上一个都不命中 → 拉丁回落到 DejaVu Sans、中文回落到 Noto Sans CJK，**两套字形混排**；
+  另外 `pre` 没设 font-family，RFC 原文直接用浏览器默认等宽
+- 做：自托管 **Inter**（latin 变量字重 48KB）+ **JetBrains Mono**（21KB），OFL 许可与 `SOURCE.md` 一起入库；
+  `--font-sans` 拉丁在前、系统 CJK 栈在后；`pre/kbd/code` 统一 `--font-mono`；
+  字号阶梯改成 h1 2em/650、h2 1.5em/600（上 2.2em 下边框）、h3 1.2em、段落 1em
+- 顺手：去掉 wiki 页 h1 的 2px 绿下划线（框架默认主题都没有），正文色 #24292f
+- 踩坑：往 style.css 里插 `:root{--font-sans…}` 时忘了闭合，后面整块 `:root` 被嵌进去 → 布局全塌（侧栏变整行）。
+  CSS 嵌套语法让这种错误不报错而是静默生效，改完必须截一张图看

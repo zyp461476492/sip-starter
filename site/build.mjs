@@ -289,6 +289,7 @@ function shell({ title, rel, active, body, bare = false }) {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · sip-starter</title>
 <script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';h.dataset.toc=d.getItem('sip.toc')||'on';h.dataset.raww=d.getItem('sip.raww')||'full';var tw=Number(d.getItem('sip.tocw'))||250;h.style.setProperty('--toc-w',Math.max(150,Math.min(480,tw))+'px');if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
+<link rel="preload" href="${rel}assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${rel}assets/style.css">
 </head><body>
 <div class="scrim" id="scrim"></div>
@@ -634,6 +635,12 @@ function buildSite({ plan, terms, candidates, pages }) {
   mkdirSync(join(DIST, 'assets'), { recursive: true });
   writeFileSync(join(DIST, 'assets/style.css'), read('site/assets/style.css'));
   writeFileSync(join(DIST, 'assets/app.js'), read('site/assets/app.js'));
+  // 自托管字体（Inter 变量 + JetBrains Mono），站点不依赖 CDN
+  const fontDir = join(ROOT, 'site/assets/fonts');
+  if (existsSync(fontDir)) {
+    mkdirSync(join(DIST, 'assets/fonts'), { recursive: true });
+    for (const f of readdirSync(fontDir)) writeFileSync(join(DIST, 'assets/fonts', f), readFileSync(join(fontDir, f)));
+  }
   CTX = { pages, nav: wikiNavOrder(pages), drills: [...DRILLS.values()], cur: null };
   // 本地发音文件（可选）：vocab/audio/* → dist/audio/*
   const audioDir = join(ROOT, 'vocab/audio');
