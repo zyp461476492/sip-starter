@@ -142,8 +142,10 @@ h2:hover .hanchor, h3:hover .hanchor { opacity: .55; }
 }
 .docmain { max-width: var(--content-w); min-width: 0; padding: 32px 0 48px; width: 100%; }
 .layout.bare { grid-template-columns: minmax(0, 1fr); }
-.layout.bare .doc { grid-template-columns: minmax(0, 1fr); max-width: 1180px; }
-.layout.bare .docmain { max-width: 100%; }
+/* 原文页（full-bleed）：整块**左对齐**不居中——左侧目录本身就是导航列，
+   居中会在大屏上把内容推出一大块空白。正文列宽单独封顶，窄屏照旧占满。 */
+.layout.bare .doc { grid-template-columns: minmax(0, 1fr); max-width: none; margin: 0; padding: 0 24px 0 20px; }
+.layout.bare .docmain { max-width: calc(var(--toc-w, 250px) + 36px + var(--content-w) + 80px); }
 
 .outline { position: sticky; top: var(--nav-h); max-height: calc(100vh - var(--nav-h)); overflow: auto; padding: 38px 0 40px; font-size: .82rem; }
 .ot-title { font-weight: 600; color: var(--fg); margin-bottom: 8px; font-size: .8rem; }
@@ -399,4 +401,11 @@ html[data-toc='off'] .rawtoc, html[data-toc='off'] .tocres { display: none; }
 @media (max-width: 960px) {
   .rawlayout { grid-template-columns: minmax(0, 1fr); }
   .tocres { display: none; }
+}
+
+/* 原文页：正文列封顶，隐藏目录后也不会拉成超宽行 */
+.rawbody { max-width: calc(var(--content-w) + 80px); }
+@media (max-width: 960px) {
+  .layout.bare .doc { padding: 0 16px; }
+  .layout.bare .docmain, .rawbody { max-width: 100%; }
 }

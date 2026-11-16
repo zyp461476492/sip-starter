@@ -152,3 +152,11 @@
   head 内联脚本先于绘制套用（无闪烁）
 - 踩坑：隐藏时用 `0 0 1fr` 三列，正文被填进 0 宽首列 —— `display:none` 的网格项不让出列。改成单列
 - 校验：合成 PointerEvent 模拟拖动 +150px → `sip.tocw=400`；点按钮 → `sip.toc=off`、按钮文案翻转、网格变 1116px 单列
+
+## [2026-11-16] M4.3 | 原文页改左对齐，回收左侧空白
+
+- 症状：1560px 宽下原文页左侧空出约 190px，目录树被推到页面中间
+- 根因：`bare` 页仍沿用 `.doc{max-width:1180px;margin:0 auto}` 的居中规则
+- 修：`.layout.bare .doc{margin:0;max-width:none;padding:0 24px 0 20px}` + `.rawbody{max-width:calc(--content-w + 80px)}`；
+  ≤960px 恢复占满
+- 结果：目录贴左边缘，正文 840px 左右，右侧留白随窗口增长
