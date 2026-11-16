@@ -41,6 +41,9 @@ npm run zh:status # 译文覆盖率报表：下一步译哪几节
   与 localStorage，CSS 变量 `--read-size` / `--content-w` 承接。无闪烁：`<head>` 里内联脚本先读 localStorage
 - **移动端**：≤960px 侧栏变抽屉（汉堡键 + 遮罩），≤1280px 隐藏右侧大纲
 - **RFC 原文页是 full-bleed**（`bare: true`）：不要左右栏，它自带 316 节目的节导航
+- **原文页目录树可调**：拖动右缘 8px 拖柄改宽度（150–480px，双击复位到 250），
+  modebar 上的「隐藏目录」或快捷键 `[` 整块收起。宽度与显隐存 `localStorage`（`sip.tocw` / `sip.toc`），
+  由 `<head>` 内联脚本先于绘制套用，不闪
 
 ## 双语原文阅读器
 
@@ -142,4 +145,5 @@ updated: 2026-11-12
 | 译文标了「原文已变」 | 原文改过 → 重跑 `npm run zh:check` 看该节，复核后更新 `en_sha` |
 | `zh:check` 报"规范词一处都没保留" | 译文把 MUST/SHOULD 译成了纯中文 → 改回 `必须（MUST）` 这类写法 |
 | 对照模式右栏空白 | 浏览器没执行 JS（`<details>` 由脚本展开）；或该节未译 |
+| 原文页目录树挤成一条/正文被压扁 | 隐藏目录时网格必须换成单列（`display:none` 的格子不会让出列），见 `html[data-toc='off'] .rawlayout` |
 | 侧栏里某页缺失 | 该页 frontmatter `id` 与路径不一致，或落在 `WIKI_GROUPS` 未登记的目录（会归到"其他"） |

@@ -20,6 +20,8 @@ last_updated: 2026-11-16
   `scripts/rfc-sections.mjs`（切节 + `en_sha`）/ `zh.mjs`（校验）/ `zh-check.mjs` / `zh-status.mjs`；
   原文页三态阅读器（中文默认为主、原文折叠、左右对照，快捷键 `t`）+「未译」「原文已变」徽标；
   **已译 8 节 / 302 节有正文小节**：§4、§7.1–7.3、§8.1.1.7、§17.1.1.1、§24.1、§24.2（全部 `draft`）
+- **M4.2 原文页目录树可调 ✅**：拖动右缘改宽（150–480px，双击复位）+「隐藏目录」/`[` 收起，
+  状态存 localStorage；`<head>` 内联脚本先于绘制套用
 - 校验：`npm run check` → 0 错误（2 条红链 `concepts/dialog` 已知）；`npm run zh:check` → 0 错误 0 提醒
 
 ## 下一步（有序）

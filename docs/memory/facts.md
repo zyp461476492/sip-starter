@@ -114,3 +114,11 @@
 - 症状：`zh:check` 报「译文出现了原文没有的规范词 MUST（§4）」，但正文并没有规范性陈述
 - 结论：校验器按词计数，不区分"引用"与"使用"。译注里要谈规范词时，改用「规范动词 / 大写关键字」这类说法
 - 证据：`sip/zh/rfc3261/4.md` 末段译注的改法
+
+## 网格里 `display:none` 的项不会让出列（2026-11-16）
+
+- 症状：原文页把目录列设成 `grid-template-columns: 0 0 1fr` 并 `display:none` 掉目录与拖柄后，
+  正文被塞进第一列（0 宽），整页字挤成竖排一条
+- 结论：`display:none` 的网格项不参与排布，但**列定义还在**，后面的项会依次往前填。
+  收起某栏时要么改成单列（`grid-template-columns: minmax(0,1fr)`），要么显式 `grid-column`
+- 证据：`site/assets/style.css` 的 `html[data-toc='off'] .rawlayout`

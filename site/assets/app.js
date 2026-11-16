@@ -530,6 +530,77 @@
     sync();
   })();
 
+  /* RFC 原文页：左侧节目录可拖宽 / 可隐藏 */
+  (function rawToc() {
+    const layout = document.querySelector('.rawlayout');
+    if (!layout) return;
+    const res = document.getElementById('tocres');
+    const btn = document.getElementById('toctoggle');
+    const MIN = 150;
+    const MAX = 480;
+    const DEFAULT = 250;
+
+    const setW = (w) => {
+      const v = Math.max(MIN, Math.min(MAX, Math.round(w)));
+      root.style.setProperty('--toc-w', v + 'px');
+      localStorage.setItem('sip.tocw', String(v));
+      return v;
+    };
+    const syncBtn = () => {
+      const on = root.dataset.toc !== 'off';
+      if (btn) {
+        btn.textContent = on ? '隐藏目录' : '显示目录';
+        btn.classList.toggle('on', on);
+      }
+    };
+    const toggle = () => {
+      const next = root.dataset.toc === 'off' ? 'on' : 'off';
+      root.dataset.toc = next;
+      localStorage.setItem('sip.toc', next);
+      syncBtn();
+    };
+
+    btn?.addEventListener('click', toggle);
+
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === '[' || e.key === '【') {
+        e.preventDefault();
+        toggle();
+        toast(root.dataset.toc === 'off' ? '目录已隐藏（[ 恢复）' : '目录已显示', 1400);
+      }
+    });
+
+    if (!res) return syncBtn();
+    let startX = 0;
+    let startW = 0;
+    res.addEventListener('pointerdown', (e) => {
+      startX = e.clientX;
+      startW = res.previousElementSibling.getBoundingClientRect().width;
+      res.classList.add('drag');
+      res.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    res.addEventListener('pointermove', (e) => {
+      if (!res.classList.contains('drag')) return;
+      setW(startW + (e.clientX - startX));
+    });
+    const stop = () => {
+      if (!res.classList.contains('drag')) return;
+      res.classList.remove('drag');
+      toast('目录宽度已保存', 1200);
+    };
+    res.addEventListener('pointerup', stop);
+    res.addEventListener('pointercancel', stop);
+    res.addEventListener('dblclick', () => {
+      setW(DEFAULT);
+      toast('目录宽度已复位', 1200);
+    });
+    syncBtn();
+  })();
+
   /* 移动端侧栏抽屉 */
   (function drawer() {
     const burger = document.getElementById('burger');

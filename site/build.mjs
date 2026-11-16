@@ -286,7 +286,7 @@ function shell({ title, rel, active, body, bare = false }) {
   return `<!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · sip-starter</title>
-<script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
+<script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';h.dataset.toc=d.getItem('sip.toc')||'on';var tw=Number(d.getItem('sip.tocw'))||250;h.style.setProperty('--toc-w',Math.max(150,Math.min(480,tw))+'px');if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
 <link rel="stylesheet" href="${rel}assets/style.css">
 </head><body>
 <div class="scrim" id="scrim"></div>
@@ -567,7 +567,8 @@ function renderRawPage({ pages, rel }) {
 <p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。
 中文译文是非官方机译（<code>sip/zh/</code>），<b>规范性以英文原文为准</b>；含 MUST / SHOULD 的句子一律保留英文原词。</p>
 <div class="rawlayout">
-  <nav class="rawtoc">${toc}</nav>
+  <nav class="rawtoc" id="rawtoc">${toc}</nav>
+  <div class="tocres" id="tocres" title="拖动调整目录宽度，双击复位"></div>
   <div class="rawbody">
     <div class="modebar">
       <span class="mb-label">显示</span>
@@ -577,7 +578,8 @@ function renderRawPage({ pages, rel }) {
         <button data-rmode="dual">对照</button>
       </span>
       <span class="mb-stat">已译 <b>${translated}</b>/${secs.length} 节</span>
-      <span class="mb-tip">快捷键 <kbd>t</kbd> 切换</span>
+      <button id="toctoggle" class="mb-btn" title="显示/隐藏左侧节目录（快捷键 [）">隐藏目录</button>
+      <span class="mb-tip"><kbd>t</kbd> 切换语言 · <kbd>[</kbd> 目录 · 拖动目录右缘调宽</span>
     </div>
     ${pre.filter((l) => l.trim()).length ? `<section id="sec-pre">${renderEn(pre.join('\n').replace(/^\n+|\n+$/g, ''))}</section>` : ''}
     ${body}

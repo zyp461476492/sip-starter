@@ -376,3 +376,27 @@ html[data-rmode='dual'] .secbi .zh { border-right: 1px dashed var(--line); paddi
 }
 #sec-pre .en p, #sec-pre .en pre { font-size: .9em; }
 .secbi .en .enh, #sec-pre .en .enh { font-weight: 700; font-size: 1em; margin: 1.3em 0 .4em; }
+
+/* ── 原文页目录树：可拖宽 / 可隐藏 ─────────────────── */
+.rawlayout { display: grid; grid-template-columns: var(--toc-w, 250px) 8px minmax(0, 1fr); column-gap: 14px; align-items: start; }
+.tocres {
+  position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h));
+  cursor: col-resize; border-radius: 3px; touch-action: none;
+}
+.tocres::before {
+  content: ''; position: absolute; top: 18px; bottom: 18px; left: 50%; width: 2px;
+  transform: translateX(-50%); background: transparent; border-radius: 2px;
+}
+.tocres:hover::before, .tocres.drag::before { background: var(--accent); opacity: .55; }
+/* 隐藏时收成单列：display:none 的网格项不会让出列，直接换成 1 列才安全 */
+html[data-toc='off'] .rawlayout { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
+html[data-toc='off'] .rawtoc, html[data-toc='off'] .tocres { display: none; }
+.mb-btn {
+  font: inherit; font-size: .8rem; padding: 3px 12px; border-radius: 20px;
+  border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer;
+}
+.mb-btn:hover, .mb-btn.on { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 960px) {
+  .rawlayout { grid-template-columns: minmax(0, 1fr); }
+  .tocres { display: none; }
+}
