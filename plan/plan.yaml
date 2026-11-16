@@ -23,8 +23,8 @@ phases:
         wiki: ["flows/basic-call"]
         drills: []
         est: 40min
-        done_when: 不看图画梯形拓扑，并说出 UAC/UAS/代理/registrar 各自维护什么状态
-        status: doing
+        done_when: 不看图画梯形拓扑，标出每条消息的方向与"逐跳/端到端"，并说清 200 OK 为何是对话建立点
+        status: done
       - id: l0-2
         title: 把 F1 REGISTER / F2 200 OK 逐头标注
         why: 后面所有测试都用这两个报文当基线，先把每个头"为什么存在"弄清
@@ -34,6 +34,16 @@ phases:
         drills: []
         est: 30min
         done_when: F1 每个头域都能说"为什么必须存在"；F2 相对 F1 新增/变化了哪些（To.tag、received）能逐条指出
+        status: todo
+      - id: l0-3
+        title: 四个角色各维护什么状态（dialog / transaction / binding 三层）
+        why: 状态定义在 §6 §12 §18.2.1，不在 §4；不分层就会把 branch、received 当成"UAC/UAS 的状态"
+        prereq: [l0-1]
+        sources: ["RFC3261 §6", "RFC3261 §10.3", "RFC3261 §12.1.1", "RFC3261 §12.1.2", "RFC3261 §17.1.3", "RFC3261 §18.2.1"]
+        wiki: ["flows/basic-call", "concepts/dialog"]
+        drills: []
+        est: 40min
+        done_when: 三句话：registrar 只有 binding；UAC/UAS 各有 dialog state + 各自一侧 transaction；代理两者皆无，要留在路径上只能靠 Record-Route
         status: todo
 
   - id: l1

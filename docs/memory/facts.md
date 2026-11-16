@@ -122,3 +122,21 @@
 - 结论：`display:none` 的网格项不参与排布，但**列定义还在**，后面的项会依次往前填。
   收起某栏时要么改成单列（`grid-template-columns: minmax(0,1fr)`），要么显式 `grid-column`
 - 证据：`site/assets/style.css` 的 `html[data-toc='off'] .rawlayout`
+
+## RFC 3261 有两套 F 编号：Figure 1 与 §24.2 不一致（2026-11-16）
+
+- 症状：照 §4 Figure 1 的编号去对 §24.2 的报文，从 F2 开始全错位
+- 结论：Figure 1 里 **F2 = INVITE 代理→代理、F3 = 100 Trying 代理→Alice**；§24.2 里正好互换
+  （F2 = 100 Trying、F3 = INVITE）。引用流程必须写明"按 §24.2"或"按 Figure 1"，
+  wiki 表统一用 §24.2。另：§24.2 示例里 **Bob 的 UA 不发 100 Trying**
+- 证据：`sip/raw/rfc/rfc3261.txt` 第 617–645 行（Figure 1）vs 第 11959–12230 行（§24.2）；
+  `wiki/flows/basic-call.md` 的 F 表已按此修正
+
+## 站点"✓ 已支撑"只校验 slug 存在（2026-11-16）
+
+- 症状：`plan.yaml` 里任务挂着 `wiki: [flows/basic-call]`，站点显示绿勾"已支撑"，
+  但页面里根本没有 `done_when` 要求的内容（l0-1 要"四个角色各维护什么状态"，当时 wiki 零命中）
+- 结论：`site/build.mjs` 只做 `pages.has(slug)`，**不校验内容覆盖**。绿勾的含义仅限
+  "页面存在且没红链"。判据是否被支撑目前只能人审；写 `done_when` 时要顺手核一遍
+  `sources` 里真的包含能回答它的章节（§4 讲拓扑，不讲状态；状态在 §6/§12/§18.2.1）
+- 证据：`site/build.mjs:757`；`wiki/flows/basic-call.md` 新增的「各角色维护什么状态」一节

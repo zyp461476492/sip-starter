@@ -205,3 +205,24 @@
 - 改：`.rawbody{width:100%;max-width:var(--raw-w,none);justify-self:center}`；`rawhead` 从 grid 外移进
   `.rawbody` 顶部（TOC 只管左边，页头与正文同宽同心）
 - 结果：满宽时不变；宽/中时在可用区域内居中；≤960px 仍占满
+
+## [2026-11-16] 里程碑 | L0-1 验收暴露两个结构性缺陷，wiki 补齐 dialog 层
+
+- L0-1 的 `done_when` 要求"说出 UAC/UAS/代理/registrar 各自维护什么状态"，但 `sources` 只有
+  §4/§24.1/§24.2 —— §4 讲拓扑不讲状态，判据在该材料下**无法完成**。按 AGENTS §3 第 9 条件当场改计划：
+  决定拆成 l0-1（画图 + 方向/逐跳/端到端）+ 新增 l0-3（三层状态），片段已交给用户（plan.yaml 仅人可写）
+- 第二个缺陷：站点"✓ 已支撑"只校验 slug 存在（`site/build.mjs:757`），绿勾骗人
+- wiki 侧：新建 `concepts/dialog.md`；`flows/basic-call.md` 补「各角色维护什么状态」
+  「为什么 ACK/BYE 可以贯穿全场」两节，F 表改按 §24.2 重编
+- 学习侧：两版手绘图对比 —— 第一版 ACK/200 OK 顺序与方向全反、多画了 Bob 的 100 Trying；
+  第二版全部对上 §24.2（编号、方向、逐跳/端到端）
+
+同日补记：用户授权 agent 代改 `plan/plan.yaml`（§2 例外，仅此一次）—— l0-1 判据收窄并标 `done`，
+新增 l0-3（sources 补 §6/§10.3/§12.1.1/§12.1.2/§17.1.3/§18.2.1）。`npm run check` → 0 错误 0 提醒，任务数 31 → 32。
+
+同日：用户质疑"plan.yaml 为什么仅人可写"，经核查 ADR-0003 并无此依据（§2 是把 terms.yaml 的禁令并过来了）。
+开 ADR-0007：元数据（title/sources/wiki/est、新增任务）人+agent 可写；`done_when`、`status`、阶段
+`code`/`timebox` 仅人——把"被校验的客观事实"与"评分刻度"分开。待用户同意后改 AGENTS.md §2 表格。
+
+ADR-0007 落地：`AGENTS.md` §2 目录表已由一行拆为三行（元数据人+agent / `done_when`+`status` 仅人 / `terms.yaml` 仅人）。
+之后 agent 可直接补计划的 sources/wiki/est 与新增任务，只把判据和状态留给人。

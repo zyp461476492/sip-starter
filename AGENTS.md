@@ -38,7 +38,9 @@
 | `sip/raw/`、`media/raw/` | 不可变证据（RFC 原文、errata、图） | **只读**，仅可追加新文件 |
 | `sip/labs/`、`media/labs/` | ABNF、报文样例、抓包、练习 | 人 + LLM |
 | `wiki/` | 编译产物（领域知识） | **仅 LLM** |
-| `plan/plan.yaml`、`vocab/terms.yaml` | 人工确认的数据 | **仅人** |
+| `plan/plan.yaml` 元数据（`title`/`why`/`prereq`/`sources`/`wiki`/`drills`/`est`、新增或拆分任务） | 计划细节 | 人 + agent（ADR-0007） |
+| `plan/plan.yaml` 的 `done_when`、`status`、阶段 `code`/`timebox`、阶段增删与顺序 | 评分刻度与结论 | **仅人**；agent 只能提议（写进对话或 `open-threads.md`） |
+| `vocab/terms.yaml` | 人工确认的数据 | **仅人** |
 | `vocab/candidates.yaml` | 待确认候选 | LLM 可写 |
 | `site/` | 生成器与样式 | 人 + LLM；`site/dist/` 永不手改 |
 | `docs/` | 项目文档与记忆 | 人 + agent |

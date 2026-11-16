@@ -27,15 +27,18 @@ last_updated: 2026-11-16
   地址 **https://zyp461476492.github.io/sip-starter/**（已出站：Pages 的 Source = GitHub Actions）
 - **M4.6 字体排版 ✅**：自托管 Inter（48KB）+ JetBrains Mono（21KB），中文走系统 CJK 栈；
   字号阶梯 h1 2em / h2 1.5em / h3 1.2em；去掉 wiki h1 绿下划线
-- 校验：`npm run check` → 0 错误（2 条红链 `concepts/dialog` 已知）；`npm run zh:check` → 0 错误 0 提醒
+- **M4.7 dialog 层补齐 ✅**：新建 `wiki/concepts/dialog.md`；`flows/basic-call.md` 加「各角色维护什么状态」
+  （dialog / transaction / binding 三层）与「ACK/BYE 为何贯穿全场（无 Record-Route）」两节，F 表改按 §24.2 重编
+- 校验：`npm run check` → **0 错误 0 提醒**（红链已清）；`npm run zh:check` → 0 错误 0 提醒
 
 ## 下一步（有序）
 
 1. **P4 续译批次 1**：§17（事务状态机，先 17.1.1.2、17.2.1）+ §16.2–16.6（代理）+ §13.1/13.2 →
    目标是"L0–L1 要读的节全有中文"。每译完一组跑 `npm run zh:check`
 2. 批次 1 完成后做一轮**独立规范段落复审**（换上下文只读英文 + 现有中文，只报不一致，不改文风）
-3. **L0-1** 读 §4 + §24.1/§24.2（40min，不写代码）——现在有中文对照，可以更快
-4. **L0-2** 把 F1 REGISTER / F2 200 OK 逐头标注（30min）
+3. **L0-1 已验收**（2026-11-16）：梯形拓扑画对，编号/方向/逐跳与端到端全部对上 §24.2
+4. **L0-3**「四个角色各维护什么状态（dialog / transaction / binding 三层）」40min，wiki 侧已就绪
+5. **L0-2** 把 F1 REGISTER / F2 200 OK 逐头标注（30min）
 5. **L1-0** 实验环境就绪：`sip/labs/toolbox/`（Dockerfile + run.sh + 前 3 个 recipe），方案已定未动手
 
 > 前三段（L0–L3）合计约 7–12 小时，**期间不写实现代码**（`AGENTS.md` §3 第 10 条）。

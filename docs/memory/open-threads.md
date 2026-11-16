@@ -4,14 +4,17 @@
 
 ## 待办（M1 遗留）
 
-- [ ] 红链 `concepts/dialog`（被 `concepts/transaction` 与 `flows/basic-call` 引用）
-  - 触发：开始编译 §12 Dialogs 时
+- [x] ~~红链 `concepts/dialog`~~ 已建 `wiki/concepts/dialog.md`（2026-11-16，status: draft）
+  - 升 `current` 的条件：编译 §12.2 并在 L1 抓包里核对一次 route set
 - [ ] `flows/basic-call.md` 仍是 `status: draft`
   - 升 `current` 的前提：① 抓一份真实 pcap 对照 ② 补一个 drill
 
 ## 待办（M2）
 
-- [ ] **L0-1**（下一个开工项）读 §4 + §24.1/§24.2，40min，不写代码（`plan.yaml` 的 `est`）
+- [x] ~~L0-3 写进 `plan.yaml`~~ 已落（2026-11-16，用户授权 agent 代改；l0-1 判据收窄并标 done）
+- [ ] **"✓ 已支撑"的定义**要不要落进 `docs/`：目前绿勾只等于"slug 存在"，不覆盖判据
+  - 触发：下一次有任务真要按绿勾判断"能不能开工"时
+- [x] ~~**L0-1** 读 §4 + §24.1/§24.2~~ 图已画对（2026-11-16），判据拆分见上
 - [ ] **L1-0 实验环境**：按 `docs/04-lab-toolbox.md` 建 docker 镜像 + 前 3 个 recipe
   - 已定：v1 = Dockerfile + run.sh + recipes/00,01,02；未动手
   - 已验证：本机 sipsak/sipp/tshark **均未安装**，docker 29.7.2 **可用**，sudo 需密码
@@ -28,6 +31,8 @@
   - 验证时机：wiki 页面数达到 100 时用 `npm run check` 统计
 
 ## 待决
+
+- [x] ~~AGENTS.md §2 按 ADR-0007 拆行~~ 已改（2026-11-16，用户授权）：元数据人+agent / 判据与 status 仅人 / 词库正式本人
 
 - [ ] `docs/memory/journal.md` 是否按月分文件
   - 触发：单文件超过 500 行

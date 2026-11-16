@@ -36,3 +36,13 @@
 
 - 结论 file back 进 `concepts/transaction.md` 的"与相邻概念的关系"
 - 留下的红链：`concepts/dialog`（待建）
+
+## [2026-11-16] query | “四个角色各维护什么状态” + L0-1 验收
+
+- 新建 `concepts/dialog.md`（status: draft）：dialog ID 两端镜像、UAS/UAC 各自构造的字段表、
+  route set 正序/反序、谁维护对话（代理不维护、B2BUA 被迫参与）
+- 更新 `flows/basic-call.md`：F 表改按 §24.2 重编（原表把 Figure 1 的 F6 混进来）、
+  新增「各角色维护什么状态」「为什么 ACK / BYE 可以贯穿全场」两节、`concepts/dialog` 红链消除
+- 发现并记录：§4 Figure 1 与 §24.2 的 F 编号**不一致**（F2/F3 互换）
+- 发现并记录：站点“✓ 已支撑”只校验 wiki slug 存在，不校验内容是否覆盖判据
+- 未动：`plan/plan.yaml`（仅人可写）——l0-1 判据拆分为 l0-1 + 新增 l0-3，片段已交给用户

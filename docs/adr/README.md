@@ -12,6 +12,7 @@
 | [0004](0004-impl-lives-elsewhere.md) | 本仓不写实现，只放 labs 最小验证件 | current |
 | [0005](0005-learning-milestones-over-linear-reading.md) | 学习按可运行里程碑推进，分层读 spec | current |
 | [0006](0006-zh-translation-layer.md) | 中文译文单独一层 `sip/zh/`，一节一文件 | current |
+| [0007](0007-plan-yaml-write-permissions.md) | `plan.yaml` 分级写入：元数据 agent 可写，判据与 `status` 仅人 | current |
 
 ## 写法约定
 

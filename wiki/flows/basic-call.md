@@ -3,9 +3,9 @@ id: flows/basic-call
 title: 基本呼叫流程（INVITE 建立 → BYE 结束）
 topics: [sip]
 status: draft
-specs: ["RFC3261 §24.2", "RFC3261 §13.1", "RFC3261 §4", "RFC3261 §16.12.1.1"]
+specs: ["RFC3261 §24.2", "RFC3261 §13.1", "RFC3261 §4", "RFC3261 §16.12.1.1", "RFC3261 §6", "RFC3261 §12.1.1", "RFC3261 §10.3", "RFC3261 §17.1.3", "RFC3261 §18.2.1"]
 drills: []
-updated: 2026-11-12
+updated: 2026-11-16
 ---
 
 # 基本呼叫流程
@@ -50,14 +50,24 @@ ACK 确认，BYE 拆除**。这是全部 SIP 知识的汇合点，其他概念�
 
 | 序 | 消息 | 方向 | 要点 |
 |---|---|---|---|
-| F1 | INVITE | Alice → atlanta.com 代理 | 带 SDP（`Content-Type: application/sdp`） |
-| F2 | 100 Trying | 代理 → Alice | 属于 INVITE 事务的 provisional，非可靠传输 |
-| F6 | INVITE | 代理 → 代理 | 代理逐跳追加 Via（原文示例里能看到三层 Via） |
-| F7 | 180 Ringing | 代理 → 代理 | 业务侧"振铃"，同样 1xx |
-| F10/F11 | 200 OK | 逐跳回送 | 携带 SDP 应答与 `To: tag`，**建立对话** |
-| F12 | ACK | Alice → Bob | 2xx 的 ACK 由 UAC core 生成，**不属于 INVITE 事务** |
-| F13 | BYE | Bob → Alice | 对话内请求 |
-| F14 | 200 OK | Alice → Bob | 结束对话 |
+| F1 | INVITE | Alice → atlanta 代理 | SDP offer；第一个 Via 由 UAC 插入 |
+| F2 | 100 Trying | atlanta 代理 → Alice | 事务层 provisional，**不建立对话** |
+| F3 | INVITE | atlanta 代理 → biloxi 代理 | 代理逐跳追加 Via（原文示例里能看到三层 Via） |
+| F4 | 100 Trying | biloxi 代理 → atlanta 代理 | 同上，逐跳 |
+| F5 | INVITE | biloxi 代理 → Bob | 示例里 **Bob 的 UA 不发 100 Trying**（UAS 发 1xx 是可选的） |
+| F6 | 180 Ringing | Bob → biloxi 代理 | 振铃，仍不建立对话 |
+| F7 | 180 Ringing | biloxi 代理 → atlanta 代理 | 响应按 Via 逐跳回送 |
+| F8 | 180 Ringing | atlanta 代理 → Alice | |
+| F9 | 200 OK | Bob → biloxi 代理 | 补 `To: Bob <sip:bob@biloxi.com>;tag=a6c85cf`，带 SDP answer |
+| F10 | 200 OK | biloxi 代理 → atlanta 代理 | Via 逐层弹出 |
+| F11 | 200 OK | atlanta 代理 → Alice | **对话在这里成立**（UAC 侧构造 dialog state，见 [[concepts/dialog]]） |
+| F12 | ACK | Alice → Bob（端到端） | 2xx 的 ACK 由 UAC core 生成，新 branch、**不属于 INVITE 事务** |
+| — | Media Session | Alice ↔ Bob | RTP 不走信令路径，代理看不到 |
+| F13 | BYE | Bob → Alice（端到端） | 对话内请求，新事务、CSeq 用 Bob 自己的编号空间 |
+| F14 | 200 OK | Alice → Bob | 结束对话与 BYE 事务 |
+
+> **编号陷阱**：Figure 1（§4）与 §24.2 的 F 编号**不一致**——Figure 1 里 F2 = INVITE 代理→代理、
+> F3 = 100 Trying 代理→Alice；§24.2 里正好互换。本表按 **§24.2**，引用时必须写明是哪一份。
 
 F1 原文（§24.2）：
 
@@ -89,15 +99,72 @@ F7 的响应里已经出现 `To: Bob <sip:bob@biloxi.com>;tag=a6c85cf`——**�
 - 3xx–6xx 的 ACK：**事务层**做，复用 INVITE 的 branch
 - 2xx 的 ACK：**UAC core** 做，是新的一个"自成事务"（详见 [[concepts/transaction]]）
 
+## 各角色维护什么状态
+
+这一节不在 §4 里——§4 只讲拓扑与流程，状态要跳到定义与对话两章。三层，别混：
+
+| 角色 | 维护的状态 | 锚点 |
+|---|---|---|
+| UAC | dialog state（local tag 自己生成、remote tag 从响应抄；local CSeq 自己递增、remote CSeq 初始空；route set 从响应的 Record-Route **反序**）+ client transaction | §12.1.2 / §17.1 |
+| UAS | dialog state（镜像：local tag 自己生成、local CSeq **初始为空**；route set 从请求的 Record-Route **正序**）+ server transaction | §12.1.1 / §17.2 |
+| 代理 | 有状态代理**只有事务**状态机，无状态代理两者皆无，**都不维护对话** | §6 / §16 |
+| registrar | 只有 **binding**（AOR → 0..n 个 contact URI，存在 location service，按 `Expires` 到期） | §6 / §10.3 |
+
+> A registrar is a UAS that responds to REGISTER requests and maintains
+> a list of bindings that are accessible to proxy servers and redirect
+> servers within its administrative domain.
+（RFC 3261 §10.3）
+
+> Stateful Proxy: A logical entity that maintains the client and
+> server transaction state machines defined by this specification
+> during the processing of a request…  A (transaction) stateful proxy is not
+> the same as a call stateful proxy.
+（RFC 3261 §6）
+
+三个常见误判（都是把"消息里的值"当成了"实体的状态"）：
+
+- `branch` 不是 UAC 的状态，而是 client transaction 的匹配键，由事务层持有
+
+  > The branch parameter in the top Via header field is used for this
+  > purpose.
+（RFC 3261 §17.1.3）
+
+- `received` 不是 UAS 的状态，而是**传输层**收到请求时按需写进顶层 Via 的参数，与对话/事务无关
+
+  > If the host portion of the "sent-by" parameter
+  > contains a domain name, or if it contains an IP address that differs
+  > from the packet source address, the server MUST add a "received"
+  > parameter to that Via header field value.
+（RFC 3261 §18.2.1）
+
+- `tag` 不归 UAC 或 UAS，而是 dialog 的 local/remote tag，两端镜像（见 [[concepts/dialog]]）
+
+## 为什么 ACK / BYE 可以贯穿全场
+
+Figure 1 里 F12–F14 画成一条贯穿线，不是"ACK 必须走原路"，而是因为示例里**没有 Record-Route**：
+
+> If no Record-Route header field is present in the
+> request, the route set MUST be set to the empty set.
+（RFC 3261 §12.1.1）
+
+route set 为空 → 对话内请求直接发给 remote target（对端 Contact）→ 代理被绕开：
+
+> This BYE is routed directly to Alice's
+> softphone, again bypassing the proxies.
+（RFC 3261 §4）
+
+代理要留在信令路径上必须在 INVITE 里加 `Record-Route`，两端把它的 URI 存进 route set（§16.6，待编译）。
+
 ## 这个流程串起来的东西
 
 - [[concepts/transaction]]：F1–F2 的阶段重传、F10 之后 2xx 的重传、ACK 的事务归属
 - [[messages/headers/via]]：每跳追加、`branch` 决定事务、响应按 Via 回送
-- [[concepts/dialog]]（待建）：对话 = Call-ID + 两个 tag
+- [[concepts/dialog]]：对话 = Call-ID + 两个 tag；200 OK 之后才存在，route set 决定后续请求怎么走
 - 待入库：SDP offer/answer（RFC 3264）、路由与 Record-Route（§16.6/§16.12）
 
 ## 未核对 / 待补
 
 - 认证挑战（401/407）插入此流程的位置：本页未编写，需按 §22.1/§22.3 逐条核
 - F3–F5、F8–F9 的代理侧行为（DNS/位置查询/目标选择）未编译
+- Record-Route 的代理侧处理（§16.6）与 route set 的用法（§12.2.1）未编译
 - 本页 `status: draft`，等两件事完成后才升 `current`：① 抓一份真实 pcap 对照 ② 补 drill
