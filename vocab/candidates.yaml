@@ -36,3 +36,57 @@
     - domain_meaning
     - confusion
     - source
+- term: participants
+  pos: ''
+  phonetic: /pɑrtˈɪsəpənts/
+  general_meaning: ''
+  domain_meaning: ''
+  confusion: ''
+  source: ''
+  topics:
+    - sip
+  status: candidate
+  added: '2026-11-13'
+  lookup:
+    source: cmudict
+    at: '2026-11-13'
+  missing:
+    - domain_meaning
+    - confusion
+    - source
+- term: simultaneously
+  pos: adverb
+  phonetic: /ˌsɪməlˈteɪnɪəsli/
+  general_meaning: Occurring at the same time.
+  domain_meaning: ''
+  confusion: ''
+  source: ''
+  topics:
+    - sip
+  status: candidate
+  added: '2026-11-13'
+  lookup:
+    source: dictionaryapi
+    at: '2026-11-13'
+  missing:
+    - domain_meaning
+    - confusion
+    - source
+- term: Numerous
+  pos: adjective
+  phonetic: BrE /ˈnjuːməɹəs/ · AmE /ˈnuməɹəs/
+  general_meaning: Indefinitely large numerically, many.
+  domain_meaning: ''
+  confusion: ''
+  source: ''
+  topics:
+    - sip
+  status: candidate
+  added: '2026-11-13'
+  lookup:
+    source: dictionaryapi
+    at: '2026-11-13'
+  missing:
+    - domain_meaning
+    - confusion
+    - source

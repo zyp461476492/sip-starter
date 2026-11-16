@@ -795,7 +795,7 @@ function main() {
    安全边界：只写 vocab/ 下两个 yaml；请求体 ≤64KB；来源限本机/私有网段。 */
 
 const YAML_HEADER =
-  '# LLM 抽取与「录词」表单写入的候选生词（待人工/agent 补全与复核）。\n# 字段与状态机见 schema.md；missing 由脚本重算，勿手改。\n\n';
+  '# LLM 抽取与「录词」表单写入的候选生词（待人工/agent 补全与复核）。\n# 字段与状态机见 schema.md；missing 由脚本重算，勿手改。\n# 纪律：drafted 只能由 agent 写；进 terms.yaml 必须由人确认。\n\n';
 
 const isLocalAddr = (ip = '') => {
   const a = ip.replace(/^::ffff:/, '');
