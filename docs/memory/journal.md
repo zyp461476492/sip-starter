@@ -167,3 +167,12 @@
 - 做：正文改 `max-width: var(--raw-w)`，`Aa` 面板新增第三行「原文」= 满 / 宽（1040）/ 中（content+60），默认满，
   存 `sip.raww`；页头（crumb + h1 + 说明）包进 `.rawhead` 收到 900px，避免长行
 - 权衡：满宽时英文行长 ~1300px（约 140 字符），长于可读区间 45–90；所以保留「宽/中」两档一键收
+
+## [2026-11-16] M4.5 | 上线 GitHub Pages（Actions artifact 部署）
+
+- 触发：仓库 public、origin 已配好，想有个随时能看的地址
+- 做：`.github/workflows/pages.yml`（check → site → upload-pages-artifact → deploy-pages），
+  `site/dist` 继续不入库；`docs/02-site.md` 加「部署」一节
+- 关键前提：全站相对路径，子路径 `/sip-starter/` 下不会碎链（扫过 dist，0 处 `/assets` 绝对引用）
+- 降级：静态托管没有 `/api/*`，录词表单自动显示「静态模式」（只查不写）
+- 待办：Settings → Pages → Source 选 GitHub Actions 才真正出站

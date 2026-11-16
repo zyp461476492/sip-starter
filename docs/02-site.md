@@ -124,6 +124,21 @@ updated: 2026-11-12
 - CMUdict 首次使用会下载到 `vocab/data/`（已 gitignore），之后完全离线
 - 写入后 `missing` 自动算出；缺项后续可交 agent 批量补全（见 `vocab/schema.md` 状态机）
 
+## 部署（GitHub Pages）
+
+仓库 public → Pages 免费。`site/dist/` **不入库**，由 `.github/workflows/pages.yml` 每次 push 到 `main`
+时跑 `npm run check && npm run site`，再把 `site/dist` 作为 artifact 发布（不走 `gh-pages` 分支）。
+
+- 地址：`https://<user>.github.io/sip-starter/`
+- 首次启用：仓库 Settings → Pages → Source 选 **GitHub Actions**（一次即可，之后自动）
+- **不需要 `base` 配置**：全站链接都是相对路径（`../`），子路径托管不会碎链；
+  图片内联、搜索走 `document.baseURI`，也不受影响
+- 静态托管的两处降级：① 生词录入只读（`/api/*` 不存在，页面自动显示"静态模式"）；
+  ② 没有服务端，别想在线写 yaml
+- 体积/流量：站点约 1 MB，Pages 上限 1 GB / ~100 GB 月流量，远够
+
+校验与构建都在 CI 里跑：`npm run check` 失败会直接挡住部署（锚点、wikilink、译文层的 error 都算）。
+
 ## 构建失败排查
 
 | 现象 | 先查 |

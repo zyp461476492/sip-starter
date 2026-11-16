@@ -23,6 +23,8 @@ last_updated: 2026-11-16
 - **M4.2 原文页目录树可调 ✅**：拖动右缘改宽（150–480px，双击复位）+「隐藏目录」/`[` 收起，
   状态存 localStorage；`<head>` 内联脚本先于绘制套用
 - **M4.4 原文页宽度可调 ✅**：正文默认满宽（`--raw-w`），`Aa` 面板第三行「原文」= 满 / 宽 / 中；页头收在 900px
+- **M4.5 GitHub Pages ✅**：`.github/workflows/pages.yml`（check → site → artifact → deploy），`dist` 不入库；
+  地址 `https://zyp461476492.github.io/sip-starter/`（需在 Settings → Pages 把 Source 选成 GitHub Actions）
 - 校验：`npm run check` → 0 错误（2 条红链 `concepts/dialog` 已知）；`npm run zh:check` → 0 错误 0 提醒
 
 ## 下一步（有序）

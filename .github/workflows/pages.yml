@@ -1,0 +1,53 @@
+name: Deploy site to GitHub Pages
+
+# 数据源都在仓库里（plan/ vocab/ wiki/ sip/），site/dist 是构建产物、不入库。
+# 因此 Pages 只做两件事：跑 `npm run site`，把 site/dist 作为 artifact 发出去。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 只保留最新一次部署，避免连续 push 时旧构建覆盖新构建
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 构建（含锚点 / wikilink / 译文层校验）
+        run: npm run check
+
+      - name: 生成站点
+        run: npm run site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
