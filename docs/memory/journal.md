@@ -176,3 +176,12 @@
 - 关键前提：全站相对路径，子路径 `/sip-starter/` 下不会碎链（扫过 dist，0 处 `/assets` 绝对引用）
 - 降级：静态托管没有 `/api/*`，录词表单自动显示「静态模式」（只查不写）
 - 待办：Settings → Pages → Source 选 GitHub Actions 才真正出站
+
+## [2026-11-16] M4.5.1 | Pages 首次部署踩坑：configure-pages 在未启用 Pages 时必失败
+
+- 症状：push 后第一次 Actions 跑到 `configure-pages` 就 failure，`upload-pages-artifact` 与 deploy 全 skipped
+- 根因：仓库当时还没开 Pages（`has_pages=false`），`configure-pages` 拿不到环境信息
+- 修：API 建 Pages `POST /repos/{o}/{r}/pages -d '{"build_type":"workflow"}'` → 201，再 `workflow_dispatch` 重跑 → success
+- 结果：`https://zyp461476492.github.io/sip-starter/` 200；`raw/rfc3261.html` 717KB / `assets/style.css` / `search.json` /
+  `drills/*` / `vocab.html` 全部 200；本地与线上渲染一致
+- 结论：**先启用 Pages，再 push** 能省一次失败构建；顺序反了只需重跑一次 workflow，不影响产物

@@ -1,5 +1,7 @@
 # sip-starter
 
+**在线站点**：<https://zyp461476492.github.io/sip-starter/>（push 到 `main` 自动构建部署，见 `.github/workflows/pages.yml`）
+
 学 SIP（以及后续 RTP/RTCP/SDP 等媒体协议）的**编译型知识库**：把 RFC 原文"编译"成
 可交叉引用、可持续维护的 wiki，再用一个静态站点把学习计划、知识库、生词本串起来。
 
