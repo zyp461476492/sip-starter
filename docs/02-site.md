@@ -8,7 +8,9 @@
 npm install       # marked + js-yaml
 npm run site      # 只构建 → site/dist/
 npm run dev       # 构建 + 本地服务（http://localhost:5173）
-npm run check     # 只校验不写文件
+npm run check     # 只校验不写文件（含中文译文层）
+npm run zh:check  # 只体检译文层（frontmatter / 节号 / en_sha 漂移 / 规范词）
+npm run zh:status # 译文覆盖率报表：下一步译哪几节
 ```
 
 `site/dist/` 是生成物，**永不手改，也不入库**（`.gitignore` 已排除）。
@@ -21,9 +23,35 @@ npm run check     # 只校验不写文件
 | `wiki/**/*.md`（frontmatter + 正文） | `dist/wiki/<area>/<slug>.html`、`dist/wiki/index.html` | 知识库（含页尾反链、相关生词） |
 | `vocab/*.yaml` | `dist/vocab.html` | 生词本（音标 + 发音 + 筛选 + 抽卡） |
 | `sip/raw/rfc/rfc3261.txt` | `dist/raw/rfc3261.html` | **原文锁点页**：按节切分、剔页眉页脚，`§x.y` 可直跳 |
+| `sip/zh/rfc3261/*.md` | 同上（每节嵌中文块） | **双语阅读器**：中文 / 原文 / 对照三态，见下 |
 | `sip/labs/drills/*.md` | `dist/drills/<slug>.html` | 练习页（带证据锚点与相关 wiki） |
 | `wiki/assets/*.svg` | 内联进对应页面 | 说明图（md 里写 `![说明](assets/x.svg)`，构建时把文件内容嵌进页面） |
 | 以上全部正文 | `dist/search.json` | 全站子串搜索（几百页足够，不上向量） |
+
+## 版式（VitePress 风格的自写外壳）
+
+`site/build.mjs` 的 `shell()` 产出：顶栏（brand + 四个导航 + 搜索 + `Aa` 阅读偏好）+
+左侧固定导航树 + 右侧「本页内容」大纲 + 页底上一页/下一页。
+
+- **左侧栏**：学习计划 / 知识库（按 concepts → messages → flows → specs → questions 分组）/ RFC 原文 / 练习 / 生词本；
+  顺序取自 `wiki/index.md` 的 wikilink 顺序，其余按字母补在后面（`wikiNavOrder()`）
+- **右侧大纲**：从渲染后的 `h2/h3` 自动抽（`addHeadingIds()` 给标题补 id），
+  `IntersectionObserver` 式的滚动高亮在 `app.js` 的 `outlineSpy()`
+- **阅读偏好**：`Aa` 面板或快捷键 `s`（字号 4 档）/ `l`（行宽 3 档）；写进 `html[data-size|data-width]`
+  与 localStorage，CSS 变量 `--read-size` / `--content-w` 承接。无闪烁：`<head>` 里内联脚本先读 localStorage
+- **移动端**：≤960px 侧栏变抽屉（汉堡键 + 遮罩），≤1280px 隐藏右侧大纲
+- **RFC 原文页是 full-bleed**（`bare: true`）：不要左右栏，它自带 316 节目的节导航
+
+## 双语原文阅读器
+
+数据在 `sip/zh/rfc3261/<节号>.md`，约定见 `sip/zh/README.md` 与 ADR-0006。
+
+- 每节渲染成「中文块 + `<details>` 折叠的英文原文」
+- 顶部 `modebar` 三态：`中文`（默认，原文折叠）/ `原文` / `对照`（左右两栏）；快捷键 `t`，状态存 `sip.rmode`
+- 未译节：英文照常显示 + 灰色「未译」徽标；原文变更过：红色虚线「原文已变」
+- **英文不是逐行 `pre`**：`toBlocks()` 把散文按段落合并折行（行尾连字符直接粘连），
+  表 / ABNF / 报文样例原样保留 —— 否则窄栏里全是断行
+- 规范词不译：`MUST` / `SHOULD` 等保留英文原词，`npm run zh:check` 逐节核对数量
 
 ## 三类 chip 的行为
 
@@ -110,3 +138,8 @@ updated: 2026-11-12
 | 查词一直"查询中…" | 在线词典被墙/超时 → 勾「离线 CMUdict」；首次会下载约 3.6MB |
 | 音标是自动转换的 | `lookup.source: cmudict`，ARPAbet→IPA 近似转换，与词典标注可能有差异 |
 | 图排版变形/文字重叠 | 跑 `node ~/.pi/agent/skills/svg-diagram/scripts/svg-check.mjs <svg>`，再用 `render.mjs` 截图看 |
+| 中文块不显示 / 显示"未译" | `sip/zh/rfc3261/<节号>.md` 是否存在，`sec` 是否等于文件名 |
+| 译文标了「原文已变」 | 原文改过 → 重跑 `npm run zh:check` 看该节，复核后更新 `en_sha` |
+| `zh:check` 报"规范词一处都没保留" | 译文把 MUST/SHOULD 译成了纯中文 → 改回 `必须（MUST）` 这类写法 |
+| 对照模式右栏空白 | 浏览器没执行 JS（`<details>` 由脚本展开）；或该节未译 |
+| 侧栏里某页缺失 | 该页 frontmatter `id` 与路径不一致，或落在 `WIKI_GROUPS` 未登记的目录（会归到"其他"） |

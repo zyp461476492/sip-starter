@@ -119,3 +119,27 @@
 - 修：抽出 `buildSite()`，`POST /api/vocab/candidate` 成功后立即 `rebuild()`；日志打 "↻ 已重建 dist"
 - 附带：`phonetic` 为空时拒绝写入（否则 check 必报错，用户会以为"存成功了却报错"）
 - 验证：POST `forking` → 响应 ok + 日志重建 + `dist/vocab.html` 立即能查到（测试条目已删）
+
+## [2026-11-16] M4.0 | 站点外壳 VitePress 化（自写生成器，不迁框架）
+
+- 触发：想要 walkinglabs / icyfenix.cn 那种文档站观感；查证结果是两站分别用 VitePress 1.6.4 与 VuePress 1.9.10 的**默认主题**
+- 选择：留在自写生成器（ADR-0002 current），只补主题层能力；否决了真迁 VitePress（§chip / drill / 生词表单 / check 都要改插件，收益只有主题本身）
+- 做：`shell()` 重写为 顶栏 + 左侧导航树 + 右侧大纲 + 页底上下页；`addHeadingIds()` 给 md 标题补 id（marked v15 不再生成）；
+  `wikiNavOrder()` 用 `wiki/index.md` 的 wikilink 顺序排导航；`Aa` 阅读偏好（字号/行宽，`s`/`l` 键，`html[data-*]` + localStorage，head 内联脚本防闪烁）；
+  移动端抽屉；`style.css` 重写为布局 + 组件两段
+- 踩坑：`.layout.bare .doc{grid-template-columns:1fr}` 只改了内层，外层 `.layout` 仍按 `264px 1fr` 排 → 原文页正文被挤进 264px 首列。
+  修法是 `.layout.bare` 自己也改列
+- 验收：105 处 `§chip` 全部命中 316 个 `#sec-*`；900px 抽屉；暗色变量两套；无 JS 报错
+
+## [2026-11-16] M4.1 | 中文译文层 `sip/zh/` + 双语阅读器
+
+- 触发：英语阅读慢，需要"中文先上手、再回原文核对"的对照读法；且规范性措辞不能被翻译改写
+- 决定：ADR-0006（译文单独一层、一节一文件、`en_sha` 检测过期、agent 只到 `draft`）
+- 做：`scripts/rfc-sections.mjs`（切节 + `sectionSha` + `toBlocks` 散文折行）/ `scripts/zh.mjs`（读入与校验）/
+  `zh-check.mjs`（规范词保留、节号、`en_sha` 漂移）/ `zh-status.mjs`（覆盖率）；
+  原文页三态 modebar（`zh`/`en`/`dual`，`t` 键切换）；`GLOSSARY.md` 8 条硬规则 + 60 个词条译法
+- 翻译：§4、§7.1、§7.2、§7.3、§8.1.1.7、§17.1.1.1、§24.1、§24.2（8 节，全部 draft）
+- 校验：故意写一份把 MUST 全译成中文的假译文，`zh:check` 报 7 个 error（22 处 MUST 一个都没保留），链路确认有效
+- 踩坑：① 英文按 `pre` 原样搬进窄栏会碎成断行 → 用"散文按段落合并、预格式化块原样保留"的分类器；
+  ② RFC 行尾连字符（`start-` / `line`）合并时不能插空格，但连字符要留；③ 散文里 `non-INVITE` 同理
+- 留：批次 1 还差 §16/§17 主体（见 open-threads）

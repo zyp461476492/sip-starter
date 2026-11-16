@@ -11,6 +11,7 @@
 | [0003](0003-yaml-as-source-of-truth.md) | 计划与词库以 yaml 为唯一数据源 | current |
 | [0004](0004-impl-lives-elsewhere.md) | 本仓不写实现，只放 labs 最小验证件 | current |
 | [0005](0005-learning-milestones-over-linear-reading.md) | 学习按可运行里程碑推进，分层读 spec | current |
+| [0006](0006-zh-translation-layer.md) | 中文译文单独一层 `sip/zh/`，一节一文件 | current |
 
 ## 写法约定
 

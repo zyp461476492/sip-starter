@@ -80,3 +80,37 @@
 
 - 结论：`site/dist/` 与 `node_modules/` 已进 `.gitignore`；要发布再单独讨论部署方式
 - 证据：`.gitignore`
+
+## marked v15 不再生成标题 id（2026-11-16）
+
+- 症状：想给站点加「本页内容」大纲，发现渲染出的 `h2` 没有 `id`，锚点全废
+- 结论：`headerIds` 选项在 marked v5 起移除；要么装 `marked-gfm-heading-id`，要么自己后处理。
+  本仓用 `addHeadingIds()` 正则补 id（slug 化保留中文、去标点、空格转 `-`、重名加序号）
+- 证据：`site/build.mjs` 的 `slugifyHeading()` / `addHeadingIds()`；`raw/rfc3261.html` 的 `sec-*` 锚点不受影响（那套是自己生成的）
+
+## CSS 里改网格列必须改「承放子元素的父级」（2026-11-16）
+
+- 症状：原文页设了 `.layout.bare .doc{grid-template-columns:minmax(0,1fr)}`，但正文仍被挤成 264px 宽
+- 结论：`.doc` 自己是 `.layout` 的第一列（`grid-template-columns: 264px minmax(0,1fr)`），
+  只改 `.doc` 内部网格没用，必须写 `.layout.bare{grid-template-columns:minmax(0,1fr)}`
+- 证据：headless Chrome `--dump-dom` + 注入 `document.title=JSON.stringify({...getBoundingClientRect().width})` 读出 264
+
+## `details` 的展开状态只能用 JS 推，CSS 推不动（2026-11-16）
+
+- 症状：对照模式想用纯 CSS 让 `<details>` 的英文原文显示出来
+- 结论：Chrome 把 `details` 的非 summary 子节点藏在 UA slot 后，`details:not([open])>pre{display:block}` 无效；
+  必须在切换模式时 `det.open = mode !== 'zh'`
+- 证据：`/tmp/bi-dual.html` 纯 CSS 版本右栏空白，加 JS 后正常
+
+## RFC 正文的行尾连字符是折行，不是词里的连字符（2026-11-16）
+
+- 症状：把 72 列硬折行合并成段落时出现 `start- line`、`re- INVITE`
+- 结论：合并时若前行以 `-` 结尾，**去掉空格直接拼**（保留连字符）：`start-`+`line` → `start-line`。
+  不能简单删连字符（会丢掉 `Request-URI` 这类复合词）
+- 证据：`scripts/rfc-sections.mjs` 的 `toBlocks()`；检验 §7.1 首段
+
+## 译注里裸写 `MUST` 会被自己的校验器判成违规（2026-11-16）
+
+- 症状：`zh:check` 报「译文出现了原文没有的规范词 MUST（§4）」，但正文并没有规范性陈述
+- 结论：校验器按词计数，不区分"引用"与"使用"。译注里要谈规范词时，改用「规范动词 / 大写关键字」这类说法
+- 证据：`sip/zh/rfc3261/4.md` 末段译注的改法

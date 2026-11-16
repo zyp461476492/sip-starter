@@ -15,6 +15,8 @@ import { createServer } from 'node:http';
 import { marked } from 'marked';
 import yaml from 'js-yaml';
 import { lookup, computeMissing } from '../scripts/vocab-lookup.mjs';
+import { readRfc3261, toBlocks } from '../scripts/rfc-sections.mjs';
+import { loadZh, checkSection } from '../scripts/zh.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '..');
 const DIST = join(ROOT, 'site', 'dist');
@@ -124,6 +126,27 @@ function wikilinks(text) {
   return out;
 }
 
+/* 标题锚点：marked 不再生成 id，自己补，供右侧大纲与深链使用 */
+function slugifyHeading(html) {
+  return String(html)
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+}
+
+function addHeadingIds(html) {
+  const used = new Map();
+  return html.replace(/<h([23])>([\s\S]*?)<\/h\1>/g, (_m, lvl, inner) => {
+    const base = slugifyHeading(inner) || `h${lvl}`;
+    const n = (used.get(base) || 0) + 1;
+    used.set(base, n);
+    const id = n === 1 ? base : `${base}-${n}`;
+    return `<h${lvl} id="${id}">${inner}<a class="hanchor" href="#${id}" aria-hidden="true">#</a></h${lvl}>`;
+  });
+}
+
 function renderMd(md, { pages, rel }) {
   const linked = md.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_all, target, text) => {
     const slug = target.trim();
@@ -144,34 +167,137 @@ function renderMd(md, { pages, rel }) {
     if (!/class="dg-/.test(svg)) warn.push(`SVG 未用 dg- 类前缀（内联时会污染页面样式）：${src}`);
     return svg;
   });
-  return html;
+  return addHeadingIds(html);
 }
 
 /* ── 页面骨架 ───────────────────────────────────────────── */
 
-const NAV = (rel, active) => `
+/* 全局导航上下文：在 buildSite() 里注入，供 shell() 取侧栏/上下页 */
+let CTX = { pages: new Map(), nav: [], drills: [], cur: null };
+
+const NAVBAR = (rel, active) => `
 <header class="topbar">
+  <button class="burger" id="burger" aria-label="目录"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></button>
   <a class="brand" href="${rel}index.html">sip<span>-starter</span></a>
-  <nav>
+  <nav class="topnav">
     <a href="${rel}index.html" class="${active === 'plan' ? 'on' : ''}">学习计划</a>
     <a href="${rel}wiki/index.html" class="${active === 'wiki' ? 'on' : ''}">知识库</a>
-    <a href="${rel}vocab.html" class="${active === 'vocab' ? 'on' : ''}">生词本</a>
     <a href="${rel}raw/rfc3261.html" class="${active === 'raw' ? 'on' : ''}">RFC 原文</a>
+    <a href="${rel}vocab.html" class="${active === 'vocab' ? 'on' : ''}">生词本</a>
   </nav>
   <div class="search">
-    <input id="q" type="search" placeholder="搜索 wiki / 生词…" autocomplete="off">
+    <input id="q" type="search" placeholder="搜索…" autocomplete="off" aria-label="搜索">
     <div id="hits" class="hits"></div>
+  </div>
+  <div class="prefs">
+    <button id="prefbtn" class="prefbtn" title="阅读偏好（s 字号 / l 行宽）">Aa</button>
+    <div id="prefmenu" class="prefmenu" hidden>
+      <div class="pr-row"><span>字号</span>
+        <button data-size="sm">小</button><button data-size="md">中</button><button data-size="lg">大</button><button data-size="xl">特大</button></div>
+      <div class="pr-row"><span>行宽</span>
+        <button data-width="narrow">窄</button><button data-width="mid">中</button><button data-width="wide">宽</button></div>
+      <p class="pr-hint">快捷键：<kbd>s</kbd> 字号 · <kbd>l</kbd> 行宽</p>
+    </div>
   </div>
 </header>`;
 
-function shell({ title, rel, active, body }) {
+const WIKI_GROUPS = [
+  ['concepts', '概念'],
+  ['messages', '消息与头域'],
+  ['flows', '流程'],
+  ['specs', '规格'],
+  ['questions', '待查'],
+];
+
+function renderSidebar(rel, active) {
+  const { pages, nav, drills } = CTX;
+  const cur = CTX.cur;
+  const on = (key) => (cur === key ? ' on' : '');
+  const groups = new Map();
+  for (const slug of nav) {
+    const g = slug.includes('/') ? slug.split('/')[0] : '';
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push(pages.get(slug));
+  }
+  const groupHtml = WIKI_GROUPS.filter(([g]) => groups.has(g))
+    .map(([g, label]) => {
+      const items = groups
+        .get(g)
+        .map((p) => `<a class="sb-i${on(`wiki:${p.slug}`)}" href="${rel}wiki/${p.slug}.html">${esc(p.data.title)}</a>`)
+        .join('');
+      return `<div class="sb-sub">${esc(label)}</div>${items}`;
+    })
+    .join('');
+  const other = groups.get('');
+  const otherHtml = other
+    ? other.map((p) => `<a class="sb-i${on(`wiki:${p.slug}`)}" href="${rel}wiki/${p.slug}.html">${esc(p.data.title)}</a>`).join('')
+    : '';
+  const drillHtml = drills
+    .map((d) => `<a class="sb-i${on(`drill:${d.slug}`)}" href="${rel}drills/${d.slug}.html">${esc(d.slug)}</a>`)
+    .join('');
+
+  return `<a class="sb-t${on('plan')}" href="${rel}index.html">学习计划</a>
+<div class="sb-grp">
+  <a class="sb-t${on('wiki')}" href="${rel}wiki/index.html">知识库</a>
+  ${groupHtml}${otherHtml}
+</div>
+<div class="sb-grp">
+  <a class="sb-t${on('raw')}" href="${rel}raw/rfc3261.html">RFC 3261 原文</a>
+</div>
+${drillHtml ? `<div class="sb-grp"><div class="sb-t plain">练习</div>${drillHtml}</div>` : ''}
+<div class="sb-grp">
+  <a class="sb-t${on('vocab')}" href="${rel}vocab.html">生词本</a>
+</div>`;
+}
+
+function renderOutline(html) {
+  const items = [...String(html).matchAll(/<h([23]) id="([^"]+)">([\s\S]*?)<\/h\1>/g)].map(([, lvl, id, inner]) => ({
+    lvl: Number(lvl),
+    id,
+    text: inner.replace(/<a class="hanchor"[\s\S]*?<\/a>/g, '').replace(/<[^>]+>/g, '').trim(),
+  }));
+  if (items.length < 2) return '';
+  return `<div class="ot-title">本页内容</div>
+<ul class="ot-list">${items
+    .map((i) => `<li class="ot-l${i.lvl}"><a href="#${encodeURIComponent(i.id)}">${i.text}</a></li>`)
+    .join('')}</ul>`;
+}
+
+function renderPager(rel) {
+  const { cur, pages, nav, drills } = CTX;
+  let list = [];
+  if (cur && cur.startsWith('wiki:') && cur !== 'wiki') {
+    list = nav.map((s) => ({ href: `wiki/${s}.html`, title: pages.get(s).data.title }));
+  } else if (cur && cur.startsWith('drill:')) {
+    list = drills.map((d) => ({ href: `drills/${d.slug}.html`, title: `drill: ${d.slug}` }));
+  } else return '';
+  const i = list.findIndex((x) => (cur.startsWith('wiki:') ? `wiki/${cur.slice(5)}.html` : `drills/${cur.slice(6)}.html`) === x.href);
+  if (i < 0) return '';
+  const prev = list[i - 1];
+  const next = list[i + 1];
+  return `<nav class="pager">
+  ${prev ? `<a class="pg prev" href="${rel}${prev.href}"><span>上一页</span><b>${esc(prev.title)}</b></a>` : '<span></span>'}
+  ${next ? `<a class="pg next" href="${rel}${next.href}"><span>下一页</span><b>${esc(next.title)}</b></a>` : '<span></span>'}
+</nav>`;
+}
+
+function shell({ title, rel, active, body, bare = false }) {
+  const outline = bare ? '' : renderOutline(body);
   return `<!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · sip-starter</title>
+<script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
 <link rel="stylesheet" href="${rel}assets/style.css">
 </head><body>
-${NAV(rel, active)}
-<main>${body}</main>
+<div class="scrim" id="scrim"></div>
+${NAVBAR(rel, active)}
+<div class="layout${bare ? ' bare' : ''}">
+  ${bare ? '' : `<aside class="sidebar" id="sidebar">${renderSidebar(rel, active)}</aside>`}
+  <div class="doc">
+    <main class="docmain">${body}${bare ? '' : renderPager(rel)}</main>
+    ${outline ? `<aside class="outline" id="outline">${outline}</aside>` : ''}
+  </div>
+</div>
 <footer>由 <code>site/build.mjs</code> 从 plan/ + vocab/ + wiki/ 生成。不要手改 dist/。</footer>
 <script src="${rel}assets/app.js"></script>
 </body></html>`;
@@ -191,7 +317,7 @@ function renderPlan(plan, pages, rel) {
       : `<span class="chip gap" title="wiki 页尚未编译">○ ${esc(slug)}</span>`;
 
   const phases = plan.phases
-    .map((phase) => {
+    .map((phase, pi) => {
       const pt = phase.tasks || [];
       const pd = pt.filter((t) => t.status === 'done').length;
       const marks = [
@@ -218,7 +344,7 @@ function renderPlan(plan, pages, rel) {
         )
         .join('');
       return `<section class="phase">
-  <h3>${esc(phase.title)} <small>${pd}/${pt.length}</small></h3>
+  <h3 id="phase-${pi + 1}">${esc(phase.title)} <small>${pd}/${pt.length}</small></h3>
   <p class="phaseMarks">${marks}</p>
   <p class="goal">目标：${esc(phase.goal)}</p>
   ${rows}
@@ -373,66 +499,87 @@ function renderWikiPage(page, pages, terms, rel) {
 </article>`;
 }
 
-/* ── RFC 原文页（按节加锁点） ───────────────────────────── */
+/* ── RFC 原文页（按节加锁点 + 中文对照） ───────────────── */
 
 let RFC_CACHE = null;
 function getRfc() {
-  if (!RFC_CACHE) RFC_CACHE = rfcSections();
+  if (!RFC_CACHE) RFC_CACHE = readRfc3261(ROOT);
   return RFC_CACHE;
 }
 
-function rfcSections(file = 'sip/raw/rfc/rfc3261.txt') {
-  const raw = readFileSync(join(ROOT, file), 'utf8');
-  const noise = [/^Rosenberg, et\. al\./, /^RFC 3261\s{2,}SIP: Session Initiation Protocol/];
-  const pre = [];
-  const secs = [];
-  let cur = null;
-  let inToc = false;
-  for (const rawLine of raw.split('\n')) {
-    const line = rawLine.replace(/\f/g, '').replace(/\s+$/, '');
-    if (noise.some((re) => re.test(line))) continue;
-    if (/^Table of Contents\s*$/.test(line)) {
-      inToc = true;
-      pre.push('（原文目录略——用右上导航，或看 rfc-editor 页面）');
-      continue;
-    }
-    const m = line.match(/^(\d{1,2}(?:\.\d{1,3})*)\.?\s+([A-Za-z0-9].*)$/);
-    const a = /^A\s+Table of Timer Values\s*$/.test(line);
-    if (m || a) {
-      inToc = false;
-      cur = { num: m ? m[1] : 'A', title: m ? m[2] : 'Table of Timer Values', lines: [] };
-      secs.push(cur);
-      continue;
-    }
-    if (inToc) continue;
-    (cur ? cur.lines : pre).push(line);
-  }
-  return { pre, secs };
+let ZH = new Map(); // 节号 → { sec, file, data, body }
+
+/** 单节渲染：有译文就出「中文 + 折叠原文」，没有就退化显示英文并标「未译」 */
+/** 原文渲染：散文按段落折行，表/ABNF/报文样例保留原样（见 rfc-sections.mjs 的 toBlocks） */
+function renderEn(text) {
+  const blocks = toBlocks(text);
+  return `<div class="en">${blocks
+    .map((b) => {
+      if (b.type === 'pre') return `<pre>${esc(b.text)}</pre>`;
+      if (b.type === 'h') return `<p class="enh">${esc(b.text)}</p>`;
+      return `<p>${esc(b.text)}</p>`;
+    })
+    .join('')}</div>`;
 }
 
-function renderRawPage(rel) {
+function renderBiSection(s, pages, rel) {
+  const anchor = `<a class="anchor" href="#sec-${s.num}">#</a>`;
+  const en = renderEn(s.text);
+  const zh = ZH.get(s.num);
+  if (!s.text.trim()) {
+    // 容器节（如 §17.1.1 本身没有正文，只有子节）：只出标题，避免空壳
+    return `<section id="sec-${s.num}" class="secbi empty" data-sec="${s.num}">
+  <h3>${esc(s.num)} &nbsp;${esc(s.title)} ${anchor}</h3>
+</section>`;
+  }
+  if (!zh) {
+    return `<section id="sec-${s.num}" class="secbi untranslated" data-sec="${s.num}">
+  <h3>${esc(s.num)} &nbsp;${esc(s.title)} <span class="zbadge untr">未译</span> ${anchor}</h3>
+  ${en}
+</section>`;
+  }
+  const stale = zh.data.en_sha && zh.data.en_sha !== s.sha;
+  const zhHtml = renderMd(zh.body, { pages, rel });
+  return `<section id="sec-${s.num}" class="secbi" data-sec="${s.num}">
+  <h3>${esc(s.num)} &nbsp;${esc(s.title)} <span class="zbadge ${esc(zh.data.status)}">译·${esc(zh.data.status)}</span>${
+    stale ? '<span class="zbadge stale" title="英文原文已变更，需复核译文">原文已变</span>' : ''
+  } ${anchor}</h3>
+  <div class="pair">
+    <div class="zh">${zhHtml}</div>
+    <details class="endet"><summary>英文原文</summary>${en}</details>
+  </div>
+</section>`;
+}
+
+function renderRawPage({ pages, rel }) {
   const { pre, secs } = getRfc();
+  const translated = secs.filter((s) => ZH.has(s.num)).length;
   const toc = secs
     .map((s) => {
       const lvl = s.num === 'A' ? 1 : s.num.split('.').length;
-      return `<a class="toc-l${Math.min(lvl, 3)}" href="#sec-${s.num}"><b>${esc(s.num)}</b> ${esc(s.title)}</a>`;
+      const mark = ZH.has(s.num) ? '<i class="toc-zh" title="有中文译文">中</i>' : '';
+      return `<a class="toc-l${Math.min(lvl, 3)}" href="#sec-${s.num}"><b>${esc(s.num)}</b> ${esc(s.title)}${mark}</a>`;
     })
     .join('');
-  const body = secs
-    .map(
-      (s) => `<section id="sec-${s.num}">
-  <h3>${esc(s.num)} &nbsp;${esc(s.title)} <a class="anchor" href="#sec-${s.num}">#</a></h3>
-  <pre class="rfctext">${esc(s.lines.join('\n').replace(/^\n+|\n+$/g, ''))}</pre>
-</section>`
-    )
-    .join('\n');
+  const body = secs.map((s) => renderBiSection(s, pages, rel)).join('\n');
   return `<div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
 <h1>RFC 3261 原文 <small>SIP: Session Initiation Protocol · 269 页</small></h1>
-<p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。</p>
+<p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。
+中文译文是非官方机译（<code>sip/zh/</code>），<b>规范性以英文原文为准</b>；含 MUST / SHOULD 的句子一律保留英文原词。</p>
 <div class="rawlayout">
   <nav class="rawtoc">${toc}</nav>
   <div class="rawbody">
-    ${pre.filter((l) => l.trim()).length ? `<section id="sec-pre"><pre class="rfctext">${esc(pre.join('\n').replace(/^\n+|\n+$/g, ''))}</pre></section>` : ''}
+    <div class="modebar">
+      <span class="mb-label">显示</span>
+      <span class="mb-seg">
+        <button data-rmode="zh" class="on">中文</button>
+        <button data-rmode="en">原文</button>
+        <button data-rmode="dual">对照</button>
+      </span>
+      <span class="mb-stat">已译 <b>${translated}</b>/${secs.length} 节</span>
+      <span class="mb-tip">快捷键 <kbd>t</kbd> 切换</span>
+    </div>
+    ${pre.filter((l) => l.trim()).length ? `<section id="sec-pre">${renderEn(pre.join('\n').replace(/^\n+|\n+$/g, ''))}</section>` : ''}
     ${body}
   </div>
 </div>`;
@@ -465,12 +612,23 @@ function writePage(relPath, html) {
 
 const relFrom = (relPath) => '../'.repeat(relPath.split('/').length - 1);
 
+function wikiNavOrder(pages) {
+  const order = [];
+  const idxFile = join(WIKI, 'index.md');
+  if (existsSync(idxFile)) {
+    for (const t of wikilinks(readFileSync(idxFile, 'utf8'))) if (pages.has(t) && !order.includes(t)) order.push(t);
+  }
+  for (const slug of [...pages.keys()].sort()) if (!order.includes(slug)) order.push(slug);
+  return order;
+}
+
 function buildSite({ plan, terms, candidates, pages }) {
   /* 构建 */
   if (existsSync(DIST)) rmSync(DIST, { recursive: true });
   mkdirSync(join(DIST, 'assets'), { recursive: true });
   writeFileSync(join(DIST, 'assets/style.css'), read('site/assets/style.css'));
   writeFileSync(join(DIST, 'assets/app.js'), read('site/assets/app.js'));
+  CTX = { pages, nav: wikiNavOrder(pages), drills: [...DRILLS.values()], cur: null };
   // 本地发音文件（可选）：vocab/audio/* → dist/audio/*
   const audioDir = join(ROOT, 'vocab/audio');
   if (existsSync(audioDir)) {
@@ -481,26 +639,39 @@ function buildSite({ plan, terms, candidates, pages }) {
   }
 
   // 1. 计划
+  CTX.cur = 'plan';
   writePage('index.html', shell({ title: '学习计划', rel: '', active: 'plan', body: renderPlan(plan, pages, '') }));
 
   // 2. wiki
-  writePage('wiki/index.html', shell({ title: '知识库', rel: '../', active: 'wiki', body: renderMd(read('wiki/index.md'), { pages, rel: '../' }) }));
+  CTX.cur = 'wiki';
+  writePage(
+    'wiki/index.html',
+    shell({ title: '知识库', rel: '../', active: 'wiki', body: renderMd(read('wiki/index.md'), { pages, rel: '../' }) })
+  );
   for (const page of pages.values()) {
     const rel = relFrom(`wiki/${page.slug}.html`);
+    CTX.cur = `wiki:${page.slug}`;
     writePage(`wiki/${page.slug}.html`, shell({ title: page.data.title, rel, active: 'wiki', body: renderWikiPage(page, pages, terms, rel) }));
   }
   // wiki 构建日志也出一页（便于回溯，不进索引）
+  CTX.cur = 'wiki';
   writePage('wiki/log.html', shell({ title: '构建日志', rel: '../', active: 'wiki', body: renderMd(read('wiki/log.md'), { pages, rel: '../' }) }));
 
   // 3. 生词
+  CTX.cur = 'vocab';
   writePage('vocab.html', shell({ title: '生词本', rel: '', active: 'vocab', body: renderVocab(terms, candidates, '') }));
 
-  // 4. RFC 原文锁点页
-  writePage('raw/rfc3261.html', shell({ title: 'RFC 3261 原文', rel: '../', active: 'raw', body: renderRawPage('../') }));
+  // 4. RFC 原文锁点页（full-bleed：自带节导航，不要侧栏）
+  CTX.cur = 'raw';
+  writePage(
+    'raw/rfc3261.html',
+    shell({ title: 'RFC 3261 原文', rel: '../', active: 'raw', body: renderRawPage({ pages, rel: '../' }), bare: true })
+  );
 
   // 5. 练习页
   for (const d of DRILLS.values()) {
     const rel = relFrom(`drills/${d.slug}.html`);
+    CTX.cur = `drill:${d.slug}`;
     writePage(`drills/${d.slug}.html`, shell({ title: `drill: ${d.slug}`, rel, active: '', body: renderDrillPage(d, pages, rel) }));
   }
 
@@ -526,6 +697,17 @@ function main() {
   const pages = collectWiki();
   H = new Set(getRfc().secs.map((s) => s.num));
   for (const [k, v] of collectDrills()) DRILLS.set(k, v);
+
+  /* 中文译文层 */
+  const zhLoaded = loadZh(ROOT);
+  ZH = zhLoaded.bySec;
+  errors.push(...zhLoaded.errors);
+  warn.push(...zhLoaded.warn);
+  for (const [sec, z] of ZH) {
+    const r = checkSection(z, getRfc().byNum.get(sec));
+    errors.push(...r.errors);
+    warn.push(...r.warn);
+  }
 
   /* 校验 */
   const VALID_VOCAB = new Set(['candidate', 'learning', 'known']);
@@ -689,6 +871,7 @@ function rebuild() {
   const pages = collectWiki();
   H = new Set(getRfc().secs.map((x) => x.num));
   for (const [k, v] of collectDrills()) DRILLS.set(k, v);
+  ZH = loadZh(ROOT).bySec;
   buildSite({ plan, terms, candidates, pages });
   console.log(`  ↻ 已重建 dist（${terms.length} 正式词 / ${candidates.length} 候选）`);
 }

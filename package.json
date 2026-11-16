@@ -7,7 +7,9 @@
   "scripts": {
     "site": "node site/build.mjs",
     "dev": "node site/build.mjs --serve",
-    "check": "node site/build.mjs --check"
+    "check": "node site/build.mjs --check",
+    "zh:check": "node scripts/zh-check.mjs",
+    "zh:status": "node scripts/zh-status.mjs"
   },
   "devDependencies": {
     "js-yaml": "^4.1.0",

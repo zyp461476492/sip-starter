@@ -388,4 +388,167 @@
     });
   }
 
+  /* ── 阅读偏好 / 右侧大纲 / 移动端抽屉 ───────────────── */
+  const root = document.documentElement;
+  const SIZES = ['sm', 'md', 'lg', 'xl'];
+  const WIDTHS = ['narrow', 'mid', 'wide'];
+  const SIZE_LABEL = { sm: '小', md: '中', lg: '大', xl: '特大' };
+  const WIDTH_LABEL = { narrow: '窄', mid: '中', wide: '宽' };
+  const prefBtn = document.getElementById('prefbtn');
+  const prefMenu = document.getElementById('prefmenu');
+
+  function syncPrefs() {
+    if (!prefMenu) return;
+    const s = root.dataset.size || 'md';
+    const w = root.dataset.width || 'mid';
+    prefMenu.querySelectorAll('[data-size]').forEach((b) => b.classList.toggle('on', b.dataset.size === s));
+    prefMenu.querySelectorAll('[data-width]').forEach((b) => b.classList.toggle('on', b.dataset.width === w));
+  }
+
+  if (prefBtn && prefMenu) {
+    prefBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      prefMenu.hidden = !prefMenu.hidden;
+      syncPrefs();
+    });
+    document.addEventListener('click', (e) => {
+      if (!prefMenu.hidden && !prefMenu.contains(e.target) && e.target !== prefBtn) prefMenu.hidden = true;
+    });
+    prefMenu.querySelectorAll('[data-size]').forEach((b) =>
+      b.addEventListener('click', () => {
+        root.dataset.size = b.dataset.size;
+        localStorage.setItem('sip.size', b.dataset.size);
+        syncPrefs();
+      })
+    );
+    prefMenu.querySelectorAll('[data-width]').forEach((b) =>
+      b.addEventListener('click', () => {
+        root.dataset.width = b.dataset.width;
+        localStorage.setItem('sip.width', b.dataset.width);
+        syncPrefs();
+      })
+    );
+    syncPrefs();
+
+    const cycle = (cur, arr) => arr[(arr.indexOf(cur) + 1) % arr.length] || arr[0];
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 's' || e.key === 'S') {
+        const n = cycle(root.dataset.size || 'md', SIZES);
+        root.dataset.size = n;
+        localStorage.setItem('sip.size', n);
+        syncPrefs();
+        toast('字号：' + SIZE_LABEL[n], 1400);
+      } else if (e.key === 'l' || e.key === 'L') {
+        const n = cycle(root.dataset.width || 'mid', WIDTHS);
+        root.dataset.width = n;
+        localStorage.setItem('sip.width', n);
+        syncPrefs();
+        toast('行宽：' + WIDTH_LABEL[n], 1400);
+      } else if (e.key === '/') {
+        const qq = document.getElementById('q');
+        if (qq) {
+          e.preventDefault();
+          qq.focus();
+          qq.select();
+        }
+      }
+    });
+  }
+
+  /* 右侧大纲：滚动时高亮当前小节 */
+  (function outlineSpy() {
+    const box = document.getElementById('outline');
+    if (!box) return;
+    const links = [...box.querySelectorAll('.ot-list a')];
+    if (!links.length) return;
+    const pairs = [];
+    for (const a of links) {
+      const el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+      if (el) pairs.push([el, a]);
+    }
+    if (!pairs.length) return;
+    const setOn = (a) => links.forEach((x) => x.classList.toggle('on', x === a));
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const top = (document.querySelector('.topbar')?.offsetHeight || 0) + 28;
+      let cur = pairs[0][1];
+      for (const [el, a] of pairs) {
+        if (el.getBoundingClientRect().top <= top) cur = a;
+        else break;
+      }
+      setOn(cur);
+    };
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    links.forEach((a) => a.addEventListener('click', () => setOn(a)));
+    update();
+  })();
+
+  /* RFC 原文页：中文 / 原文 / 对照 三态（默认中文，原文折叠） */
+  (function readerMode() {
+    const bar = document.querySelector('.modebar');
+    if (!bar) return;
+    const btns = [...bar.querySelectorAll('[data-rmode]')];
+    const pairs = [...document.querySelectorAll('.secbi')];
+    const LABEL = { zh: '中文（原文折叠）', en: '英文原文', dual: '左右对照' };
+    const sync = () => {
+      const mode = root.dataset.rmode || 'zh';
+      btns.forEach((b) => b.classList.toggle('on', b.dataset.rmode === mode));
+      pairs.forEach((sec) => {
+        const det = sec.querySelector('.endet');
+        if (det) det.open = mode !== 'zh';
+      });
+    };
+    btns.forEach((b) =>
+      b.addEventListener('click', () => {
+        root.dataset.rmode = b.dataset.rmode;
+        localStorage.setItem('sip.rmode', b.dataset.rmode);
+        sync();
+        toast('显示：' + LABEL[b.dataset.rmode], 1400);
+      })
+    );
+    document.addEventListener('keydown', (e) => {
+      const t = e.target;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key !== 't' && e.key !== 'T') return;
+      const order = ['zh', 'en', 'dual'];
+      const next = order[(order.indexOf(root.dataset.rmode || 'zh') + 1) % order.length];
+      root.dataset.rmode = next;
+      localStorage.setItem('sip.rmode', next);
+      sync();
+      toast('显示：' + LABEL[next], 1400);
+    });
+    sync();
+  })();
+
+  /* 移动端侧栏抽屉 */
+  (function drawer() {
+    const burger = document.getElementById('burger');
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    if (!burger || !sidebar) return;
+    const close = () => {
+      sidebar.classList.remove('open');
+      scrim?.classList.remove('on');
+    };
+    burger.addEventListener('click', () => {
+      const open = !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', open);
+      scrim?.classList.toggle('on', open);
+    });
+    scrim?.addEventListener('click', close);
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.closest('a')) close();
+    });
+  })();
+
 })();
