@@ -439,15 +439,16 @@ html[data-toc='off'] .rawtoc, html[data-toc='off'] .tocres { display: none; }
   .tocres { display: none; }
 }
 
-/* 原文页正文宽度：Aa 面板「原文」一档控制（默认满宽，吃满剩余空间） */
+/* 原文页正文宽度：Aa 面板「原文」一档控制（默认满宽，吃满剩余空间）。
+   收窄时**居中**——左对齐会把空白全堆在右边，看着像没写完；隐藏目录后尤其明显。 */
 html[data-raww='full'] { --raw-w: none; }
 html[data-raww='wide'] { --raw-w: 1040px; }
 html[data-raww='mid'] { --raw-w: calc(var(--content-w) + 60px); }
-.rawbody { max-width: var(--raw-w, none); }
+.rawbody { width: 100%; max-width: var(--raw-w, none); justify-self: center; }
 @media (max-width: 960px) {
   .layout.bare .doc { padding: 0 16px; }
   .rawbody { max-width: 100%; }
 }
 
-/* 原文页页头：正文满宽时页头仍收在可读宽度内 */
+/* 原文页页头在正文列内，与正文同宽同心；满宽时仍收在可读宽度内 */
 .rawhead { max-width: 900px; }

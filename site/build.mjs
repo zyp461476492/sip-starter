@@ -565,16 +565,16 @@ function renderRawPage({ pages, rel }) {
     })
     .join('');
   const body = secs.map((s) => renderBiSection(s, pages, rel)).join('\n');
-  return `<div class="rawhead">
-<div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
-<h1>RFC 3261 原文 <small>SIP: Session Initiation Protocol · 269 页</small></h1>
-<p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。
-中文译文是非官方机译（<code>sip/zh/</code>），<b>规范性以英文原文为准</b>；含 MUST / SHOULD 的句子一律保留英文原词。</p>
-</div>
-<div class="rawlayout">
+  return `<div class="rawlayout">
   <nav class="rawtoc" id="rawtoc">${toc}</nav>
   <div class="tocres" id="tocres" title="拖动调整目录宽度，双击复位"></div>
   <div class="rawbody">
+    <div class="rawhead">
+      <div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
+      <h1>RFC 3261 原文 <small>SIP: Session Initiation Protocol · 269 页</small></h1>
+      <p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。
+中文译文是非官方机译（<code>sip/zh/</code>），<b>规范性以英文原文为准</b>；含 MUST / SHOULD 的句子一律保留英文原词。</p>
+    </div>
     <div class="modebar">
       <span class="mb-label">显示</span>
       <span class="mb-seg">
