@@ -38,11 +38,13 @@ npm run zh:status # 译文覆盖率报表：下一步译哪几节
 - **右侧大纲**：从渲染后的 `h2/h3` 自动抽（`addHeadingIds()` 给标题补 id），
   `IntersectionObserver` 式的滚动高亮在 `app.js` 的 `outlineSpy()`
 - **阅读偏好**：`Aa` 面板或快捷键 `s`（字号 4 档）/ `l`（行宽 3 档）；写进 `html[data-size|data-width]`
-  与 localStorage，CSS 变量 `--read-size` / `--content-w` 承接。无闪烁：`<head>` 里内联脚本先读 localStorage
+  与 localStorage，CSS 变量 `--read-size` / `--content-w` 承接。另有第三行「原文」控制 RFC 原文页正文宽度
+  （满 / 宽 / 中 → `html[data-raww]` → `--raw-w`），默认满宽。无闪烁：`<head>` 里内联脚本先读 localStorage
 - **移动端**：≤960px 侧栏变抽屉（汉堡键 + 遮罩），≤1280px 隐藏右侧大纲
 - **RFC 原文页是 full-bleed**（`bare: true`）：不要左右栏，它自带 316 节目的节导航。
   整块**左对齐不居中**（`.layout.bare .doc{margin:0}`）——目录本身就是导航列，居中会在大屏左侧
-  空出一大块；正文列单独封顶 `--content-w + 80px`，隐藏目录后也不会拉成超宽行
+  空出一大块。正文宽度默认**满宽**（吃满剩余空间），需要收窄时用 `Aa` 面板第三行「原文」（满 / 宽 / 中），
+  存 `sip.raww`；页头单独收在 900px（`.rawhead`），否则标题与说明会被拉成超长行
 - **原文页目录树可调**：拖动右缘 8px 拖柄改宽度（150–480px，双击复位到 250），
   modebar 上的「隐藏目录」或快捷键 `[` 整块收起。宽度与显隐存 `localStorage`（`sip.tocw` / `sip.toc`），
   由 `<head>` 内联脚本先于绘制套用，不闪

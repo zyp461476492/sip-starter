@@ -392,6 +392,8 @@
   const root = document.documentElement;
   const SIZES = ['sm', 'md', 'lg', 'xl'];
   const WIDTHS = ['narrow', 'mid', 'wide'];
+  const RAWWS = ['full', 'wide', 'mid'];
+  const RAWW_LABEL = { full: '满宽', wide: '宽', mid: '中' };
   const SIZE_LABEL = { sm: '小', md: '中', lg: '大', xl: '特大' };
   const WIDTH_LABEL = { narrow: '窄', mid: '中', wide: '宽' };
   const prefBtn = document.getElementById('prefbtn');
@@ -403,6 +405,8 @@
     const w = root.dataset.width || 'mid';
     prefMenu.querySelectorAll('[data-size]').forEach((b) => b.classList.toggle('on', b.dataset.size === s));
     prefMenu.querySelectorAll('[data-width]').forEach((b) => b.classList.toggle('on', b.dataset.width === w));
+    const rw = root.dataset.raww || 'full';
+    prefMenu.querySelectorAll('[data-raww]').forEach((b) => b.classList.toggle('on', b.dataset.raww === rw));
   }
 
   if (prefBtn && prefMenu) {
@@ -425,6 +429,13 @@
       b.addEventListener('click', () => {
         root.dataset.width = b.dataset.width;
         localStorage.setItem('sip.width', b.dataset.width);
+        syncPrefs();
+      })
+    );
+    prefMenu.querySelectorAll('[data-raww]').forEach((b) =>
+      b.addEventListener('click', () => {
+        root.dataset.raww = b.dataset.raww;
+        localStorage.setItem('sip.raww', b.dataset.raww);
         syncPrefs();
       })
     );

@@ -145,7 +145,7 @@ h2:hover .hanchor, h3:hover .hanchor { opacity: .55; }
 /* 原文页（full-bleed）：整块**左对齐**不居中——左侧目录本身就是导航列，
    居中会在大屏上把内容推出一大块空白。正文列宽单独封顶，窄屏照旧占满。 */
 .layout.bare .doc { grid-template-columns: minmax(0, 1fr); max-width: none; margin: 0; padding: 0 24px 0 20px; }
-.layout.bare .docmain { max-width: calc(var(--toc-w, 250px) + 36px + var(--content-w) + 80px); }
+.layout.bare .docmain { max-width: none; }
 
 .outline { position: sticky; top: var(--nav-h); max-height: calc(100vh - var(--nav-h)); overflow: auto; padding: 38px 0 40px; font-size: .82rem; }
 .ot-title { font-weight: 600; color: var(--fg); margin-bottom: 8px; font-size: .8rem; }
@@ -403,9 +403,15 @@ html[data-toc='off'] .rawtoc, html[data-toc='off'] .tocres { display: none; }
   .tocres { display: none; }
 }
 
-/* 原文页：正文列封顶，隐藏目录后也不会拉成超宽行 */
-.rawbody { max-width: calc(var(--content-w) + 80px); }
+/* 原文页正文宽度：Aa 面板「原文」一档控制（默认满宽，吃满剩余空间） */
+html[data-raww='full'] { --raw-w: none; }
+html[data-raww='wide'] { --raw-w: 1040px; }
+html[data-raww='mid'] { --raw-w: calc(var(--content-w) + 60px); }
+.rawbody { max-width: var(--raw-w, none); }
 @media (max-width: 960px) {
   .layout.bare .doc { padding: 0 16px; }
-  .layout.bare .docmain, .rawbody { max-width: 100%; }
+  .rawbody { max-width: 100%; }
 }
+
+/* 原文页页头：正文满宽时页头仍收在可读宽度内 */
+.rawhead { max-width: 900px; }

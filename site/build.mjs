@@ -196,6 +196,8 @@ const NAVBAR = (rel, active) => `
         <button data-size="sm">小</button><button data-size="md">中</button><button data-size="lg">大</button><button data-size="xl">特大</button></div>
       <div class="pr-row"><span>行宽</span>
         <button data-width="narrow">窄</button><button data-width="mid">中</button><button data-width="wide">宽</button></div>
+      <div class="pr-row"><span>原文</span>
+        <button data-raww="full">满</button><button data-raww="wide">宽</button><button data-raww="mid">中</button></div>
       <p class="pr-hint">快捷键：<kbd>s</kbd> 字号 · <kbd>l</kbd> 行宽</p>
     </div>
   </div>
@@ -286,7 +288,7 @@ function shell({ title, rel, active, body, bare = false }) {
   return `<!doctype html><html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(title)} · sip-starter</title>
-<script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';h.dataset.toc=d.getItem('sip.toc')||'on';var tw=Number(d.getItem('sip.tocw'))||250;h.style.setProperty('--toc-w',Math.max(150,Math.min(480,tw))+'px');if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
+<script>try{var h=document.documentElement,d=localStorage;h.dataset.size=d.getItem('sip.size')||'md';h.dataset.width=d.getItem('sip.width')||'mid';h.dataset.rmode=d.getItem('sip.rmode')||'zh';h.dataset.toc=d.getItem('sip.toc')||'on';h.dataset.raww=d.getItem('sip.raww')||'full';var tw=Number(d.getItem('sip.tocw'))||250;h.style.setProperty('--toc-w',Math.max(150,Math.min(480,tw))+'px');if(d.getItem('sip.theme')==='dark')h.classList.add('dark')}catch(e){}</script>
 <link rel="stylesheet" href="${rel}assets/style.css">
 </head><body>
 <div class="scrim" id="scrim"></div>
@@ -562,10 +564,12 @@ function renderRawPage({ pages, rel }) {
     })
     .join('');
   const body = secs.map((s) => renderBiSection(s, pages, rel)).join('\n');
-  return `<div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
+  return `<div class="rawhead">
+<div class="crumb"><a href="${rel}index.html">学习计划</a> / RFC 3261 原文</div>
 <h1>RFC 3261 原文 <small>SIP: Session Initiation Protocol · 269 页</small></h1>
 <p class="muted">由 <code>sip/raw/rfc/rfc3261.txt</code> 生成，已剔除页眉页脚。每节一个锁点：计划页与 wiki 页的 <code>§x.y</code> 直接跳到这里。
 中文译文是非官方机译（<code>sip/zh/</code>），<b>规范性以英文原文为准</b>；含 MUST / SHOULD 的句子一律保留英文原词。</p>
+</div>
 <div class="rawlayout">
   <nav class="rawtoc" id="rawtoc">${toc}</nav>
   <div class="tocres" id="tocres" title="拖动调整目录宽度，双击复位"></div>
