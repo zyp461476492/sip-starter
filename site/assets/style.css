@@ -295,6 +295,9 @@ button.speak .ico { width: 13px; height: 13px; flex: none; }
 .rawtoc .toc-l1 { margin-top: 7px; font-weight: 600; color: var(--fg); }
 .rawtoc .toc-l2 { padding-left: 10px; }
 .rawtoc .toc-l3 { padding-left: 20px; font-size: .92em; }
+/* 当前正在读的节：高亮 + 左缘标记（与右侧大纲同一套语言） */
+.rawtoc a.on { color: var(--accent); font-weight: 600; background: var(--accent-soft); border-radius: 4px; }
+.rawtoc a.on b { color: var(--accent); }
 .rawbody section { scroll-margin-top: calc(var(--nav-h) + 14px); border-bottom: 1px dashed var(--line); padding-bottom: 6px; }
 .rawbody h3 { font-size: .95em; margin: 1.4em 0 .3em; font-weight: 600; }
 .rawbody .anchor { opacity: 0; margin-left: 6px; font-weight: 400; }

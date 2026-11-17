@@ -517,6 +517,7 @@
         const det = sec.querySelector('.endet');
         if (det) det.open = mode !== 'zh';
       });
+      document.dispatchEvent(new CustomEvent('sip:layout'));
     };
     btns.forEach((b) =>
       b.addEventListener('click', () => {
@@ -555,6 +556,7 @@
       const v = Math.max(MIN, Math.min(MAX, Math.round(w)));
       root.style.setProperty('--toc-w', v + 'px');
       localStorage.setItem('sip.tocw', String(v));
+      document.dispatchEvent(new CustomEvent('sip:layout'));
       return v;
     };
     const syncBtn = () => {
@@ -569,6 +571,7 @@
       root.dataset.toc = next;
       localStorage.setItem('sip.toc', next);
       syncBtn();
+      document.dispatchEvent(new CustomEvent('sip:layout'));
     };
 
     btn?.addEventListener('click', toggle);
@@ -610,6 +613,103 @@
       toast('目录宽度已复位', 1200);
     });
     syncBtn();
+  })();
+
+  /* RFC 原文页：左侧节目录 —— 点击精确跳转 + 阅读时高亮并自动滚动当前节 */
+  (function rawTocSpy() {
+    const nav = document.getElementById('rawtoc');
+    if (!nav) return;
+    const links = [...nav.querySelectorAll('a[href^="#sec-"]')];
+    if (!links.length) return;
+    const pairs = links
+      .map((a) => ({ a, el: document.getElementById(a.getAttribute('href').slice(1)) }))
+      .filter((p) => p.el);
+    if (!pairs.length) return;
+
+    const pad = () => (document.querySelector('.topbar')?.offsetHeight || 0) + 14;
+    const setOn = (cur) => links.forEach((x) => x.classList.toggle('on', x === cur));
+
+    /* 树内跟随：只在本项看不见时才滚；用户正在滚/拖这棵树时不抢 */
+    let holdUntil = 0;
+    const hold = () => (holdUntil = Date.now() + 2000);
+    nav.addEventListener('wheel', hold, { passive: true });
+    nav.addEventListener('touchmove', hold, { passive: true });
+    nav.addEventListener('pointerdown', hold);
+    const keepVisible = (a) => {
+      if (Date.now() < holdUntil) return;
+      const nr = nav.getBoundingClientRect();
+      const ar = a.getBoundingClientRect();
+      const m = 20;
+      if (ar.top >= nr.top + m && ar.bottom <= nr.bottom - m) return;
+      nav.scrollTop += ar.top - nr.top - (nav.clientHeight - ar.height) / 2;
+    };
+
+    /* 高亮当前节：节是有序的，二分找最后一个 top 已越过阈值的节 */
+    let cur = null;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const top = pad();
+      let lo = 0;
+      let hi = pairs.length - 1;
+      let idx = 0;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (pairs[mid].el.getBoundingClientRect().top <= top) {
+          idx = mid;
+          lo = mid + 1;
+        } else hi = mid - 1;
+      }
+      const a = pairs[idx].a;
+      if (a !== cur) {
+        cur = a;
+        setOn(a);
+      }
+      keepVisible(a);
+    };
+    const schedule = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    window.addEventListener('load', schedule);
+    document.addEventListener('sip:layout', schedule);
+
+    /* 点击：精确滚到节标题下方（不让 sticky 顶栏盖住）；URL 同步但不堆历史 */
+    nav.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="#sec-"]');
+      if (!a) return;
+      const el = document.getElementById(a.getAttribute('href').slice(1));
+      if (!el) return;
+      e.preventDefault();
+      const y = el.getBoundingClientRect().top + window.scrollY - pad() + 2;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      history.replaceState(null, '', a.getAttribute('href'));
+      cur = a;
+      setOn(a);
+      keepVisible(a);
+    });
+
+    /* 从别处深链进来（§chip / 计划页）：字体与折叠块稳定后校正一次落点 */
+    const fixHash = () => {
+      const id = decodeURIComponent(location.hash.slice(1));
+      const el = id ? document.getElementById(id) : null;
+      if (!el) return;
+      const y = el.getBoundingClientRect().top + window.scrollY - pad() + 2;
+      try {
+        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+      } catch (_) {
+        window.scrollTo(0, Math.max(0, y));
+      }
+      schedule();
+    };
+    if (location.hash) {
+      requestAnimationFrame(fixHash);
+      window.addEventListener('load', fixHash);
+    }
+    update();
   })();
 
   /* 移动端侧栏抽屉 */

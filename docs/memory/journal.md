@@ -265,3 +265,21 @@ ADR-0007 落地：`AGENTS.md` §2 目录表已由一行拆为三行（元数据�
   （`MUST retransmit ... and MUST reset`）时中文容易省掉第二个；`T1 MAY be chosen larger` 被写成"也可以选得更大"
 - 结果：`npm run zh:check` 0 错误 0 提醒；覆盖 68/302（23%）；L0–L2 的 `sources` 全部有中文
 - 未动：`wiki/messages/headers/format.md`、`wiki/index.md`、`wiki/log.md`（另一条线的工作，未提交）
+
+## [2026-11-16] M4.11 | 原文页左侧节目录：点击精确跳转 + 阅读时高亮跟随
+
+- 触发：用户「阅读 RFC 原文（如 7.3 章节），左侧的导航树没有跳转到对应位置」
+- 查：`#rawtoc` 里的每项本来就是 `<a href="#sec-7.3">`，目标 `id` 也在（316 个），浏览器层面能跳；
+  缺的是**联动**——滚动正文时树不动、不高亮，深链落点也会被 sticky 顶栏盖住一半
+- 做（`site/assets/app.js` 新增 IIFE `rawTocSpy`）：
+  ① 点击时 `preventDefault` + `scrollTo(top - (顶栏高 + 14) + 2)`，再用 `history.replaceState` 同步 hash（不堆历史）
+  ② 滚动时二分找“最后一个 top 已越过阈值的节”（316 节别线性扫），给对应项 `.on`
+  ③ 树内跟随：只在当前项看不见时才 `nav.scrollTop += …` 居中；用户 `wheel/touchmove/pointerdown` 后 2s 内不抢
+  ④ 深链（§chip / 计划页跳来）在 `requestAnimationFrame` 与 `load` 各校正一次落点（字体/折叠块会改变布局）
+- CSS：`.rawtoc a.on{color:accent;font-weight:600;background:accent-soft}`，与右侧大纲同一套视觉语言；
+  用 `.rawtoc a.on` 而不是 `.toc-l1`（后者权重更低且写死 `--fg`）
+- 顺带：`readerMode` 的三态切换、目录拖宽/隐藏都会改布局 → 各自 `document.dispatchEvent(new CustomEvent('sip:layout'))`，
+  spy 监听后重算
+- 验：headless Chrome + CDP（Node 24 自带 WebSocket，无需 puppeteer）实测——
+  点 §7.3 → `scrollY=14181`、`h3.top=68`（顶栏 56+12）、树高亮该节；滚到 §17.2.1/§21.4.28 时高亮与树内可见都对；
+  带 `#sec-9.2` 打开 → 落点 `68` 且已高亮
