@@ -244,3 +244,24 @@ ADR-0007 落地：`AGENTS.md` §2 目录表已由一行拆为三行（元数据�
 - 重要内容：**§7.3.1 的"多行同名头域何时可合并"例外清单**（WWW-Authenticate/Authorization/Proxy-Authenticate/
   Proxy-Authorization 不得合并）、以及"逗号合并会改变语义"的三个 Route 反例 —— l0-2 逐头标注时要用
 - 结论：`sip/zh/` 覆盖 52 节（17%）；`npm run zh:check` 0 错误 0 提醒
+
+## [2026-11-17] query | 「隐式空白」看不懂 → 补出 wiki 的头域语法层
+
+- 用户的困惑点是**文法形式**而不是协议行为：RFC 3261 §7.3 说 SIP 头域语义抄 HTTP，但 HTTP 用
+  "implicit whitespace and folding"、SIP 用 RFC 2234 的 "explicit" 写法——不熟 ABNF 完全读不出差别
+- 讲清顺序（两次问答迭代出来的）：先给「同一件事两种写法」的对照 → 再补 ABNF 记号与 core rules 字节
+  → 最后逐条拆 `LWS`/`SWS`/`HCOLON`。**先记法后规则**，反过来一定看不懂
+- 落成 `wiki/messages/headers/format.md`（current），并在页里把「折行不是全局许可」写成判据：
+  折行只出现在具体产生式的 `LWS` 上，`Call-ID` 的 `callid` 里没有 `LWS` → 文法层面不许折
+- 未核对：RFC 2616 §2.1/§4.2、RFC 2234 §6.1——**两篇都没入库**，页里已显式标注
+
+## [2026-11-16] M4.10 | L2 涉及的节译完（52 → 68 节）：§1/2/3/5 + §17 全块
+
+- 触发：用户「L2 涉及的也翻译」；按 l2-1/l2-2/l2-3 的 `sources` 清单算差集，剩下 §1/2/3/5 与 §17 整块
+- §17 全块共 13 个有正文的节，含三张 ASCII 状态图（Figure 5/6/7/8）——图**原样进 code fence**，
+  只在外面写中文；事务状态名（Calling/Proceeding/Completed/Confirmed/Terminated、Trying）保留英文，
+  与定时器名 A–K 一致（GLOSSARY 的思路：标识符不译）
+- 踩坑又一次：§17.1.1.2 第一版少了 1 个 MUST、1 个 MAY —— 一个英文 MUST 带并列动词
+  （`MUST retransmit ... and MUST reset`）时中文容易省掉第二个；`T1 MAY be chosen larger` 被写成"也可以选得更大"
+- 结果：`npm run zh:check` 0 错误 0 提醒；覆盖 68/302（23%）；L0–L2 的 `sources` 全部有中文
+- 未动：`wiki/messages/headers/format.md`、`wiki/index.md`、`wiki/log.md`（另一条线的工作，未提交）
