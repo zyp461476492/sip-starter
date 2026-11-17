@@ -236,3 +236,11 @@ ADR-0007 落地：`AGENTS.md` §2 目录表已由一行拆为三行（元数据�
   兄弟节若与该任务无关则不译（§10.1/10.2、§12.2、§21 的其他类）
 - 附录 A 只译 Table 4；紧随其后的 Acknowledgments / Authors' Addresses / Copyright 在译文里显式标注"未译"
 - 收尾：`npm run zh:check` → 0 错误 0 提醒（修了 3 处规范词计数不符）；`npm run check`/`site` → 0 错误
+
+## [2026-11-16] M4.9 补 | §7.3 的子节也译了（7.3.1 / 7.3.2 / 7.3.3）
+
+- 触发：用户「7.3 下面的子目录也都翻译了」——上一批只译了 §7.3 的主干（头域语法与合并规则），
+  子节（字段格式与空白规则、请求/响应头域分类、紧凑形式）还是空的
+- 重要内容：**§7.3.1 的"多行同名头域何时可合并"例外清单**（WWW-Authenticate/Authorization/Proxy-Authenticate/
+  Proxy-Authorization 不得合并）、以及"逗号合并会改变语义"的三个 Route 反例 —— l0-2 逐头标注时要用
+- 结论：`sip/zh/` 覆盖 52 节（17%）；`npm run zh:check` 0 错误 0 提醒
