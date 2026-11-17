@@ -52,6 +52,8 @@
 | Call-ID | Call-ID（不译） | 呼叫标识 | RFC3261 §20.8 |
 | merged request | 合并请求 | 重复请求、冲突请求 | RFC3261 §8.2.2.2 |
 | glare | 撞车（glare） | 眩光、冲突 | RFC3261 §14.2 |
+| transaction user (TU) | 事务用户 | 事务使用者 | RFC3261 §5, §9.2 |
+| transport | 传输（层） | 运输 | RFC3261 §18 |
 
 ## C. 路由与代理行为
 

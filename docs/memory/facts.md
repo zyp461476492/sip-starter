@@ -140,3 +140,13 @@
   "页面存在且没红链"。判据是否被支撑目前只能人审；写 `done_when` 时要顺手核一遍
   `sources` 里真的包含能回答它的章节（§4 讲拓扑，不讲状态；状态在 §6/§12/§18.2.1）
 - 证据：`site/build.mjs:757`；`wiki/flows/basic-call.md` 新增的「各角色维护什么状态」一节
+
+## `zh:check` 的规范词计数按"出现次数"，两个反直觉点（2026-11-16）
+
+- 症状：§10.3 报「MUST 原文 28 / 译文 29」，句句对着看都译对了；§21.4.10 直接报「一处英文原词都没保留」
+- 结论一：`MUST NOT` **同时**计入 `MUST` 与 `MUST NOT` 两个桶（英文侧也这样），所以英文有 1 处 `MUST NOT`
+  时 `MUST` 计数里已经含了它，译文照写即可，别把它从 MUST 里减掉
+- 结论二：一个英文 `MUST` 带两个并列动词时（`the binding MUST be removed if ... and updated otherwise`），
+  中文很容易拆成两个 `MUST`（"MUST 被删除，否则 MUST 被更新"）→ 多一个。并列动词共用一个规范词
+- 结论三：中文整句意译时容易把 `SHOULD` 吞掉（"则应改用 404" 丢掉了 `SHOULD`）——**先照英文把规范词落位，再润文风**
+- 证据：`sip/zh/rfc3261/10.3.md` 第 47 行、`sip/zh/rfc3261/21.4.10.md`；校验器 `scripts/zh.mjs` 的 `checkSection`
